@@ -5,7 +5,6 @@
         enum ProgramState
         {
             None,
-            WasWelcome,
             Started,
             Finished
         }
