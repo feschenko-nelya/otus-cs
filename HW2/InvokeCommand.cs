@@ -19,28 +19,28 @@ namespace HW3
 
             if (!string.IsNullOrEmpty(userRequest))
 			{
-				string[] args = userRequest.Split(' ');
+				int spaceIndex = userRequest.IndexOf(' ');
 
-				int argsCount = args.Count();
-
-                if (argsCount > 0)
+                if (spaceIndex < 0)
 				{
-					AbstractCommand? command = ProgramInfo.mainCommands.Get(args[0]);
-
-					if (command != null)
+                    AbstractCommand? command = ProgramInfo.mainCommands.Get(userRequest);
+					if ((command != null) && command.IsEnabled())
 					{
-						if (argsCount == 1)
-						{
-							command.Execute();
-                        }
-						else
-						{
-							command.Execute(args[1]);
-                        }
+						command.Execute();
+                        Console.ReadLine();
+                    }
+                }
+				else
+				{
+                    string commandCode = userRequest.Substring(0, spaceIndex);
 
-						Console.ReadLine();
-					}
-				}
+                    AbstractCommand? command = ProgramInfo.mainCommands.Get(commandCode);
+					if ((command != null) && command.IsEnabled())
+					{
+						command.Execute(userRequest.Substring(spaceIndex + 1));
+                        Console.ReadLine();
+                    }
+                }
 			}
         }
         public override string GetInfo()
