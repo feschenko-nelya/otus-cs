@@ -17,7 +17,7 @@ namespace HW3
 		{
             Console.WriteLine(GetInfo());
 
-            foreach (var command in ProgramInfo.commands)
+            foreach (var command in ProgramInfo.mainCommands)
             {
 				StringBuilder str = new();
 				str.Append(command.GetCode());

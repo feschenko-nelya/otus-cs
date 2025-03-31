@@ -32,7 +32,7 @@ namespace HW3
                 Console.WriteLine($"{ProgramInfo.userName}, введите одну из команд:");
             }
 
-            foreach (var command in ProgramInfo.commands)
+            foreach (var command in ProgramInfo.mainCommands)
             {
                 if (command.IsEnabled())
                 {

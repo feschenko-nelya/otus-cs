@@ -16,6 +16,7 @@ namespace HW3
 
         public static State state = State.None;
         public static string? userName = string.Empty;
-        public static CommandContainer commands = new();
+        public static CommandContainer mainCommands = new();
+        public static CommandContainer userCommands = new();
     }
 }

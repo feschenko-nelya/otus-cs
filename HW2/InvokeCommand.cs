@@ -25,13 +25,13 @@ namespace HW3
 
                 if (argsCount > 0)
 				{
-					AbstractCommand? command = ProgramInfo.commands.Get(args[0]);
+					AbstractCommand? command = ProgramInfo.mainCommands.Get(args[0]);
 
 					if (command != null)
 					{
 						if (argsCount == 1)
 						{
-							command.Execute("");
+							command.Execute();
                         }
 						else
 						{
