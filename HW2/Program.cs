@@ -1,5 +1,10 @@
 ﻿using HW3;
 
+namespace TestPullRequest
+{
+
+}
+
 namespace HW2
 {
     internal class Program
