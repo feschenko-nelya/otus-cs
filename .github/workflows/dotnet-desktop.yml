@@ -41,9 +41,10 @@ name: .NET Core Desktop
 on:
   push:
     branches: [ "main" ]
+    paths: ["HW2"]
   pull_request:
     branches: [ "main" ]
-
+    paths: ["HW2"]
 jobs:
 
   build:
