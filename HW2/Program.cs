@@ -1,10 +1,5 @@
 ﻿using HW3;
 
-namespace TestPullRequest
-{
-
-}
-
 namespace HW2
 {
     internal class Program
@@ -25,8 +20,27 @@ namespace HW2
 
             while (ProgramInfo.state != ProgramInfo.State.Finished)
             {
-                inviteCommand.Execute();
-                invokeCommand.Execute();
+                try
+                {
+                    inviteCommand.Execute();
+                    invokeCommand.Execute();
+                }
+                catch (Exception exception)
+                {
+                    Console.WriteLine($"""
+                        Произошла непредвиденная ошибка.
+                        Детальная информация:
+
+                        Type: {exception.GetType}
+                        Message: {exception.Message}
+                        Stack trace: 
+                        {exception.StackTrace}
+                        Inner exception: {exception.InnerException}
+                        """);
+
+                    Console.ReadLine();
+                    ProgramInfo.state = ProgramInfo.State.Finished;
+                }
             }
         }
     }
