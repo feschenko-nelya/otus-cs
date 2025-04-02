@@ -14,6 +14,11 @@ namespace HW3
         }
         public override void Execute(string arg)
         {
+            if (ProgramInfo.userCommands.Count == ProgramInfo.tasksMaxLimit)
+            {
+                throw new TaskCountLimitException(ProgramInfo.tasksMaxLimit);
+            }
+
             Console.Write("Пожалуйста, введите описание задачи: ");
             string? taskName = null;
 
@@ -29,6 +34,15 @@ namespace HW3
         public override string GetInfo()
         {
             return "Добавление новой задачи.";
+        }
+    }
+
+    public class TaskCountLimitException : Exception
+    {
+        public TaskCountLimitException(int taskCountLimit) 
+               : base($"Превышено максимальное количество задач равное {taskCountLimit}")
+        {
+
         }
     }
 }

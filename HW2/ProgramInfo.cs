@@ -6,7 +6,7 @@ namespace HW3
     {
         public static readonly Version version = new Version(1, 0);
         public static readonly DateTime creationDate = new DateTime(2025, 3, 27);
-
+        public static int tasksMaxLimit = 100;
         public enum State
         {
             None,
