@@ -19,15 +19,8 @@ namespace HW2
             var inviteCommand = new InviteCommand();
             var invokeCommand = new InvokeCommand();
 
-            Console.WriteLine("Введите максимально допустимое количество задач");
-            GetNumberCommand getNumberCommand = new(1, 100);
-            getNumberCommand.Execute();
-            ProgramInfo.tasksMaxLimit = getNumberCommand.Number;
-
-            if (ProgramInfo.tasksMaxLimit == 0)
-            {
-                ProgramInfo.state = ProgramInfo.State.Finished;
-            }
+            TasksMaxNumberCommand tasksMaxNumberCommand = new TasksMaxNumberCommand();
+            tasksMaxNumberCommand.Execute();
 
             while (ProgramInfo.state != ProgramInfo.State.Finished)
             {
