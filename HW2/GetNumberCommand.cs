@@ -28,22 +28,34 @@ namespace HW4
             {
                 string? snumber = Console.ReadLine();
 
-                _number = -1;
-                if (!int.TryParse(snumber, out _number))
+                try
                 {
-                    _number = -1;
-                    throw new ArgumentException($"Не удалось получить число из \"{snumber}\".");
+                    _number = ParseAndValidateInt(snumber, _min, _max);
                 }
-                else if (_number == 0)
+                catch (Exception)
                 {
-                    break;
-                }
-                else if ((_number < _min) || (_number > _max))
-                {
-                    _number = -1;
-                    throw new ArgumentException($"Число {_number} выходит за границы допустимого: [1; {_max}].");
+                    throw;
                 }
             }
+        }
+
+        private int ParseAndValidateInt(string? str, int min, int max)
+        {
+            int number = 0;
+            if (!int.TryParse(str, out number))
+            {
+                throw new ArgumentException($"Не удалось получить число из \"{str}\".");
+            }
+            else if (number == 0)
+            {
+                return 0;
+            }
+            else if ((number < min) || (number > max))
+            {
+                throw new ArgumentException($"Число {number} выходит за границы допустимого: [{min}; {max}].");
+            }
+
+            return number;
         }
 
         public override string GetCode()
