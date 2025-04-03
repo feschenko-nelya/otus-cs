@@ -27,6 +27,16 @@ namespace HW3
                 taskName = Console.ReadLine();
             }
 
+            if (taskName.Length > ProgramInfo.tasksMaxLength)
+            {
+                throw new TaskLengthLimitException(taskName.Length, ProgramInfo.tasksMaxLength);
+            }
+
+            if (ProgramInfo.userCommands.Contains(taskName))
+            {
+                throw new DuplicateTaskException(taskName);
+            }
+
             ProgramInfo.userCommands.Add(new UserCommand(taskName));
 
             Console.WriteLine($"Задача \"{taskName}\" добавлена.");
@@ -42,7 +52,20 @@ namespace HW3
         public TaskCountLimitException(int taskCountLimit) 
                : base($"Превышено максимальное количество задач равное {taskCountLimit}")
         {
-
+        }
+    }
+    public class TaskLengthLimitException : Exception
+    {
+        public TaskLengthLimitException(int taskLength, int taskLengthLimit)
+               : base($"Длина задачи ‘{taskLength}’ превышает максимально допустимое значение {taskLengthLimit}.")
+        {
+        }
+    }
+    public class DuplicateTaskException : Exception
+    {
+        public DuplicateTaskException(string task)
+               : base($"Задача ‘{task}’ уже существует.")
+        {
         }
     }
 }

@@ -7,20 +7,18 @@ namespace HW2
     {
         static void Main()
         {
-            ProgramInfo.mainCommands = [new StartCommand(),
-                                        new EchoCommand(),
-                                        new AddTaskCommand(),
-                                        new ShowTasksCommand(),
-                                        new RemoveTaskCommand(),
-                                        new HelpCommand(),
-                                        new InfoCommand(),
-                                        new EndCommand(),];
+            try
+            {
+                init();
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception.Message);
+                return;
+            }
 
             var inviteCommand = new InviteCommand();
             var invokeCommand = new InvokeCommand();
-
-            TasksMaxNumberCommand tasksMaxNumberCommand = new TasksMaxNumberCommand();
-            tasksMaxNumberCommand.Execute();
 
             while (ProgramInfo.state != ProgramInfo.State.Finished)
             {
@@ -34,6 +32,14 @@ namespace HW2
                     Console.WriteLine(exception.Message);
                 }
                 catch (TaskCountLimitException exception)
+                {
+                    Console.WriteLine(exception.Message);
+                }
+                catch (TaskLengthLimitException exception)
+                {
+                    Console.WriteLine(exception.Message);
+                }
+                catch (DuplicateTaskException exception)
                 {
                     Console.WriteLine(exception.Message);
                 }
@@ -55,6 +61,24 @@ namespace HW2
 
                 Console.ReadLine();
             }
+        }
+
+        private static void init()
+        {
+            ProgramInfo.mainCommands = [new StartCommand(),
+                                        new EchoCommand(),
+                                        new AddTaskCommand(),
+                                        new ShowTasksCommand(),
+                                        new RemoveTaskCommand(),
+                                        new HelpCommand(),
+                                        new InfoCommand(),
+                                        new EndCommand(),];
+
+            TasksMaxNumberCommand tasksMaxNumberCommand = new TasksMaxNumberCommand();
+            tasksMaxNumberCommand.Execute();
+
+            TaskMaxLengthCommand taskMaxLengthCommand = new TaskMaxLengthCommand();
+            taskMaxLengthCommand.Execute();
         }
     }
 }
