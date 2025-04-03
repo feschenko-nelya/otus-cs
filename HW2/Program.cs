@@ -9,7 +9,7 @@ namespace HW2
         {
             try
             {
-                init();
+                Init();
             }
             catch (Exception exception)
             {
@@ -63,7 +63,7 @@ namespace HW2
             }
         }
 
-        private static void init()
+        private static void Init()
         {
             ProgramInfo.mainCommands = [new StartCommand(),
                                         new EchoCommand(),
