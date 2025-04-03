@@ -13,7 +13,7 @@ namespace HW2
             }
             catch (Exception exception)
             {
-                Console.WriteLine(exception.Message);
+                ShowException(exception.Message);
                 return;
             }
 
@@ -29,23 +29,23 @@ namespace HW2
                 }
                 catch (ArgumentException exception)
                 {
-                    Console.WriteLine(exception.Message);
+                    ShowException(exception.Message);
                 }
                 catch (TaskCountLimitException exception)
                 {
-                    Console.WriteLine(exception.Message);
+                    ShowException(exception.Message);
                 }
                 catch (TaskLengthLimitException exception)
                 {
-                    Console.WriteLine(exception.Message);
+                    ShowException(exception.Message);
                 }
                 catch (DuplicateTaskException exception)
                 {
-                    Console.WriteLine(exception.Message);
+                    ShowException(exception.Message);
                 }
                 catch (Exception exception)
                 {
-                    Console.WriteLine($"""
+                    ShowException($"""
                         Произошла непредвиденная ошибка.
                         Детальная информация:
 
@@ -79,6 +79,12 @@ namespace HW2
 
             TaskMaxLengthCommand taskMaxLengthCommand = new TaskMaxLengthCommand();
             taskMaxLengthCommand.Execute();
+        }
+
+        private static void ShowException(string message)
+        {
+            Console.WriteLine();
+            Console.WriteLine(message);
         }
     }
 }

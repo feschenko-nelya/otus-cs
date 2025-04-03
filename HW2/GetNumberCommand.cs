@@ -26,36 +26,16 @@ namespace HW4
 
             while (_number == -1)
             {
-                string? snumber = Console.ReadLine();
-
                 try
                 {
-                    _number = ParseAndValidateInt(snumber, _min, _max);
+                    string? str = Console.ReadLine();
+                    _number = StringExtends.ParseAndValidateInt(str, _min, _max);
                 }
                 catch (Exception)
                 {
                     throw;
                 }
             }
-        }
-
-        private int ParseAndValidateInt(string? str, int min, int max)
-        {
-            int number = 0;
-            if (!int.TryParse(str, out number))
-            {
-                throw new ArgumentException($"Не удалось получить число из \"{str}\".");
-            }
-            else if (number == 0)
-            {
-                return 0;
-            }
-            else if ((number < min) || (number > max))
-            {
-                throw new ArgumentException($"Число {number} выходит за границы допустимого: [{min}; {max}].");
-            }
-
-            return number;
         }
 
         public override string GetCode()
