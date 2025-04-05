@@ -27,36 +27,9 @@ namespace HW2
                     inviteCommand.Execute();
                     invokeCommand.Execute();
                 }
-                catch (ArgumentException exception)
-                {
-                    ShowException(exception.Message);
-                }
-                catch (TaskCountLimitException exception)
-                {
-                    ShowException(exception.Message);
-                }
-                catch (TaskLengthLimitException exception)
-                {
-                    ShowException(exception.Message);
-                }
-                catch (DuplicateTaskException exception)
-                {
-                    ShowException(exception.Message);
-                }
                 catch (Exception exception)
                 {
-                    ShowException($"""
-                        Произошла непредвиденная ошибка.
-                        Детальная информация:
-
-                        Type: {exception.GetType}
-                        Message: {exception.Message}
-                        Stack trace: 
-                        {exception.StackTrace}
-                        Inner exception: {exception.InnerException}
-                        """);
-
-                    ProgramInfo.state = ProgramInfo.State.Finished;
+                    ProcessException(exception);
                 }
 
                 Console.ReadLine();
@@ -79,6 +52,33 @@ namespace HW2
 
             TaskMaxLengthCommand taskMaxLengthCommand = new TaskMaxLengthCommand();
             taskMaxLengthCommand.Execute();
+        }
+
+        private static void ProcessException(Exception exception)
+        {
+            if ((exception.GetType() == typeof(ArgumentException))
+                || (exception.GetType() == typeof(TaskCountLimitException))
+                || (exception.GetType() == typeof(TaskLengthLimitException))
+                || (exception.GetType() == typeof(DuplicateTaskException))
+               )
+            {
+                ShowException(exception.Message);
+            }
+            else
+            {
+                ShowException($"""
+                        Произошла непредвиденная ошибка.
+                        Детальная информация:
+
+                        Type: {exception.GetType}
+                        Message: {exception.Message}
+                        Stack trace: 
+                        {exception.StackTrace}
+                        Inner exception: {exception.InnerException}
+                        """);
+
+                ProgramInfo.state = ProgramInfo.State.Finished;
+            }
         }
 
         private static void ShowException(string message)
