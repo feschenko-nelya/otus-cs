@@ -27,7 +27,6 @@ namespace HW3
 					if ((command != null) && command.IsEnabled())
 					{
 						command.Execute();
-                        Console.ReadLine();
                     }
                 }
 				else
@@ -38,7 +37,6 @@ namespace HW3
 					if ((command != null) && command.IsEnabled())
 					{
 						command.Execute(userRequest.Substring(spaceIndex + 1));
-                        Console.ReadLine();
                     }
                 }
 			}
