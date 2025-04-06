@@ -8,7 +8,9 @@ namespace HW5
         {
             //BaseTask();
 
-            ExtTask1();
+            //ExtTask1();
+
+            ExtTask2();
         }
 
         public static void BaseTask()
@@ -52,10 +54,20 @@ namespace HW5
             s.Merge(new OtusStack("1", "2", "3"));
 
             // в стеке s теперь элементы - "a", "b", "c", "3", "2", "1" <- верхний
-            for (int i = s.Size - 1; i >= 0; --i)
-            {
-                Console.Write(s.Pop() + " ");
-            }
+            s.printStack();
+            Console.WriteLine($"верхний: {s.Top}");
+        }
+
+        public static void ExtTask2()
+        {
+            var s = OtusStack.Concat(new OtusStack("a", "b", "c"), 
+                                     new OtusStack("1", "2", "3"), 
+                                     new OtusStack("А", "Б", "В"));
+
+
+            // в стеке s теперь элементы -  "c", "b", "a" "3", "2", "1", "В", "Б", "А" <- верхний
+            s.printStack();
+            Console.WriteLine($"верхний: {s.Top}");
         }
     }
 }
