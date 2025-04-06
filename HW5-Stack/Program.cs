@@ -6,6 +6,14 @@ namespace HW5
     {
         static void Main(string[] args)
         {
+            //BaseTask();
+
+            ExtTask1();
+        }
+
+        public static void BaseTask()
+        {
+            
             var s = new OtusStack("a", "b", "c");
 
             // size = 3, Top = 'c'
@@ -30,11 +38,24 @@ namespace HW5
             {
                 s.Pop();
             }
-            catch(Exception exception)
+            catch (Exception exception)
             {
                 Console.WriteLine(exception.Message);
             }
+        }
 
+        public static void ExtTask1()
+        {
+            var s = new OtusStack("a", "b", "c");
+
+
+            s.Merge(new OtusStack("1", "2", "3"));
+
+            // в стеке s теперь элементы - "a", "b", "c", "3", "2", "1" <- верхний
+            for (int i = s.Size - 1; i >= 0; --i)
+            {
+                Console.Write(s.Pop() + " ");
+            }
         }
     }
 }
