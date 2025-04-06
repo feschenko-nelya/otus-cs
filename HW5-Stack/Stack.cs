@@ -58,6 +58,30 @@ namespace HW5
 			return result;
 		}
 
+		static public OtusStack Concat(params OtusStack[] ss)
+		{
+			OtusStack result = new();
+
+            foreach (OtusStack s in ss)
+			{
+				for (int i = s.Size - 1; i >= 0; --i)
+				{
+					result.Add(s.Pop());
+				}
+			}
+
+			return result;
+		}
+
+		public void printStack()
+		{
+			for (int i = 0; i < _size; ++i)
+			{
+				Console.Write(_stack.ElementAt(i) + " ");
+			}
+			Console.WriteLine();
+		}
+
 	}
 
 	public class StackIsEmptyException : Exception
