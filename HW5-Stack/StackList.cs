@@ -61,7 +61,6 @@ namespace HW5
 
 			return _stack.ElementAt(_size - 1);
         }
-
         static public StackList Concat(params StackList[] ss)
         {
             StackList result = new();

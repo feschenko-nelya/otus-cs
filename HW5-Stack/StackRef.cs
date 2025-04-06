@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Text;
 
 namespace HW5
 {
-	public class StackRef
+	public class StackRef : AbstractStack
 	{
 		private class StackItem
 		{
@@ -11,27 +12,6 @@ namespace HW5
 		}
 
 		private StackItem? _top = null;
-		private int _size = 0;
-        public string? Top
-        {
-            get
-            {
-                if (_top == null)
-                {
-                    return null;
-                }
-
-                return _top.value;
-            }
-        }
-
-        public int Size
-        {
-            get
-            {
-                return _size;
-            }
-        }
 
         public StackRef()
 		{
@@ -47,7 +27,17 @@ namespace HW5
             }
         }
 
-        public void Add(string str)
+        protected override string? GetTop()
+        {
+            if (_top == null)
+            {
+                return null;
+            }
+
+            return _top.value;
+        }
+
+        public override void Add(string str)
         {
             var newObj = new StackItem();
             newObj.value = str;
@@ -62,7 +52,7 @@ namespace HW5
             ++_size;
         }
 
-        public string Pop()
+        public override string Pop()
         {
             if ((_size <= 0) || (_top == null))
             {
@@ -81,6 +71,23 @@ namespace HW5
             return lastValue;
         }
 
+        public override void Print()
+        {
+            StackItem? curItem = _top;
+
+            StringBuilder valuesStr = new();
+
+            while (curItem != null)
+            {
+                valuesStr.Insert(0, " ");
+                valuesStr.Insert(0, curItem.value);
+
+                curItem = curItem.previous;
+            }
+
+            Console.WriteLine(valuesStr);
+        }
+
         static public StackRef Concat(params StackRef[] ss)
         {
             StackRef result = new();
@@ -94,19 +101,6 @@ namespace HW5
             }
 
             return result;
-        }
-
-        public void printStack()
-        {
-            StackItem? curItem = _top;
-
-            while (curItem != null)
-            {
-                Console.Write(curItem.value + " ");
-
-                curItem = curItem.previous;
-            }
-            Console.WriteLine();
         }
     }
 }
