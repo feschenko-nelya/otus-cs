@@ -81,7 +81,6 @@ namespace HW5
 			}
 			Console.WriteLine();
 		}
-
 	}
 
 	public class StackIsEmptyException : Exception
