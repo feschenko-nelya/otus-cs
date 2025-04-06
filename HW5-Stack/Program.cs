@@ -8,7 +8,7 @@ namespace HW5
         {
             // Base task
             {
-                //var s1 = new OtusStack("a", "b", "c");
+                //var s1 = new StackList("a", "b", "c");
                 //var s2 = new StackRef("a", "b", "c");
 
                 //BaseTask(s1);
@@ -18,8 +18,8 @@ namespace HW5
 
             // Task 1
             {
-                //AbstractStack s = new OtusStack("a", "b", "c");
-                //ExtTask1(ref s, new OtusStack("1", "2", "3"));
+                //AbstractStack s = new StackList("a", "b", "c");
+                //ExtTask1(ref s, new StackList("1", "2", "3"));
 
                 //Console.WriteLine("***");
 
