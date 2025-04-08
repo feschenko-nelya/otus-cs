@@ -5,20 +5,8 @@ namespace HW5
 	public abstract class AbstractStack
 	{
         protected int _size = 0;
-        public int Size
-        {
-            get
-            {
-                return _size;
-            }
-        }
-        public string? Top
-        {
-            get 
-            {
-                return GetTop();
-            }
-        }
+        public int Size => _size;
+        public string? Top => GetTop();
 
         public abstract void Add(string str);
         public abstract string Pop();
