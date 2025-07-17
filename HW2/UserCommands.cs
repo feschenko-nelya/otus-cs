@@ -1,4 +1,5 @@
-﻿using HW3;
+﻿using HW2.User;
+using HW3;
 
 public class UserCommands : CommandContainer
 {
@@ -67,7 +68,7 @@ public class UserCommands : CommandContainer
             throw new DuplicateTaskException(name);
         }
 
-        Add(new UserCommand(name));
+        Add(new ToDoItem(name));
 
         return true;
 	}
