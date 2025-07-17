@@ -1,27 +1,36 @@
 ﻿using System;
+using Otus.ToDoList.ConsoleBot.Types;
+using Otus.ToDoList.ConsoleBot;
 
 namespace HW3
 {
 	public class InfoCommand : AbstractCommand
 	{
-		public InfoCommand()
+        private static readonly Version _version = new Version(1, 0);
+        private static readonly DateTime _creationDate = new DateTime(2025, 3, 27);
+
+        public InfoCommand() : base(null)
 		{
 		}
 
         public override string GetCode()
-		{
-			return "/info";
-		}
+        {
+            return "/info";
+        }
 
-        public override void Execute(string arg)
+        public override void Execute(ITelegramBotClient botClient, Message botMessage)
 		{
-			Console.WriteLine($"Version: {ProgramInfo.version.ToString()}");
-            Console.WriteLine($"Creation date: {ProgramInfo.creationDate.ToString("dd.MM.yyyy")}");
+            botClient.SendMessage(botMessage.Chat, $"Version: {_version.ToString()}");
+            botClient.SendMessage(botMessage.Chat, $"Creation date: {_creationDate.ToString("dd.MM.yyyy")}");
         }
 
         public override string GetInfo()
 		{
 			return "Информация о версии и дате создания программы.";
 		}
+        public override bool IsEnabled(long telegramUserId)
+        {
+            return true;
+        }
     }
 }

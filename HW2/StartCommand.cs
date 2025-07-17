@@ -1,39 +1,41 @@
 ﻿using System;
 using System.Xml.Linq;
+using HW2.User;
+using Otus.ToDoList.ConsoleBot.Types;
+using Otus.ToDoList.ConsoleBot;
 
 namespace HW3
 {
 	public class StartCommand : AbstractCommand
 	{
-		public StartCommand()
+        public StartCommand(UserService userService) : base(userService)
 		{
-		}
+        }
         public override string GetCode()
         {
             return "/start";
         }
-        public override void Execute(string arg)
+
+        public override void Execute(ITelegramBotClient botClient, Message botMessage)
 		{
-            Console.WriteLine("Введите имя, по которому к Вам можно обратиться:");
+            ToDoUser? toDoUser = _userService.RegisterUser(botMessage.From.Id, botMessage.From.Username);
 
-            while (string.IsNullOrEmpty(ProgramInfo.userName))
+            if (toDoUser == null)
             {
-                ProgramInfo.userName = Console.ReadLine();
+                botClient.SendMessage(botMessage.Chat, $"Здравствуйте, {botMessage.From.Username}. Вы не зарегистрированы.");
             }
-
-            Console.Clear();
-            Console.WriteLine("Здравствуйте, " + ProgramInfo.userName);
-
-            ProgramInfo.state = ProgramInfo.State.Started;
+            else 
+            { 
+                botClient.SendMessage(botMessage.Chat, $"Здравствуйте, {toDoUser.TelegramUserName}. Вы зарегистрированы.");
+            }
         }
         public override string GetInfo()
 		{
-			return "Начало работы программы: ввод имени, по которому обращаться к пользователю;";
+			return "Начало работы бота: регистрация пользователя;";
 		}
-
-        public override bool IsEnabled()
+        public override bool IsEnabled(long telegramUserId)
         {
-            return (ProgramInfo.state == ProgramInfo.State.None);
+            return true;
         }
     }
 }

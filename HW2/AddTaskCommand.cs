@@ -1,45 +1,47 @@
 ﻿using System;
+using HW2.User;
+using Otus.ToDoList.ConsoleBot.Types;
+using Otus.ToDoList.ConsoleBot;
 
 namespace HW3
 {
     public class AddTaskCommand : AbstractCommand
     {
-	    public AddTaskCommand()
-	    {
+        public AddTaskCommand(UserService userService) : base(userService)
+        {
 	    }
 
         public override string GetCode()
         {
             return "/addtask";
         }
-        public override void Execute(string arg)
+
+        public override void Execute(ITelegramBotClient botClient, Message botMessage)
         {
-            if (ProgramInfo.userCommands.Count == ProgramInfo.tasksMaxLimit)
+            if (_userService == null || !IsEnabled(botMessage.From.Id))
             {
-                throw new TaskCountLimitException(ProgramInfo.tasksMaxLimit);
+                botClient.SendMessage(botMessage.Chat, "Команда не доступна.");
+                return;
             }
 
-            Console.Write("Пожалуйста, введите описание задачи: ");
-            string? taskName = null;
+            List<string> args = GetArguments(botMessage.Text);
 
-            while (string.IsNullOrEmpty(taskName))
+            if (args.Count == 0)
             {
-                taskName = Console.ReadLine();
+                botClient.SendMessage(botMessage.Chat, "Введите название задачи.");
+                return;
             }
 
-            if (taskName.Length > ProgramInfo.tasksMaxLength)
+            string commandName = string.Join(" ", args);
+
+            if (_userService.AddUserCommand(botMessage.From.Id, string.Join(" ", args)))
             {
-                throw new TaskLengthLimitException(taskName.Length, ProgramInfo.tasksMaxLength);
+                botClient.SendMessage(botMessage.Chat, "Задача добавлена.");
             }
-
-            if (ProgramInfo.userCommands.Contains(taskName))
+            else
             {
-                throw new DuplicateTaskException(taskName);
+                botClient.SendMessage(botMessage.Chat, "Задача не добавлена.");
             }
-
-            ProgramInfo.userCommands.Add(new UserCommand(taskName));
-
-            Console.WriteLine($"Задача \"{taskName}\" добавлена.");
         }
         public override string GetInfo()
         {

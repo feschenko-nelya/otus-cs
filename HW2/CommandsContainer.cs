@@ -4,9 +4,10 @@ namespace HW3
 {
 	public class CommandContainer : List<AbstractCommand>
 	{
+		
         public CommandContainer()
 		{
-		}
+        }
 
 		public AbstractCommand? Get(string code)
 		{
@@ -19,19 +20,6 @@ namespace HW3
 			}
 
 			return null;
-		}
-
-		public bool Contains(string name)
-		{
-			foreach (var command in this)
-			{
-				if (command.GetInfo() == name)
-				{
-					return true;
-				}
-			}
-
-			return false;
 		}
 	}
 }
