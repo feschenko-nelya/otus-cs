@@ -38,30 +38,24 @@ namespace HW3
             List<string> args = GetArguments(botMessage.Text);
             if (args.Count == 0)
             {
-                botClient.SendMessage(botMessage.Chat, "Введите номер команды, начиная с 1, которую нужно удалить.");
+                botClient.SendMessage(botMessage.Chat, "Введите Guid команды, которую нужно удалить.");
                 return;
             }
 
-            int number = -1;
-            if (!int.TryParse(args.ElementAt(0), out number))
+            Guid guid;
+            if (!Guid.TryParse(args.ElementAt(0), out guid))
             {
-                botClient.SendMessage(botMessage.Chat, "Номер команды неверный.");
-                return;
-            }
-            
-            if (number < 1)
-            {
-                botClient.SendMessage(botMessage.Chat, "Номер команды неверный.");
+                botClient.SendMessage(botMessage.Chat, "Guid команды неверный.");
                 return;
             }
 
-            if (_toDoService.Delete(toDoUser.UserId, number - 1))
+            if (_toDoService.Delete(toDoUser.UserId, guid))
             {
-                botClient.SendMessage(botMessage.Chat, $"Команда №{number} удалена.");
+                botClient.SendMessage(botMessage.Chat, "Команда удалена.");
             }
             else
             { 
-                botClient.SendMessage(botMessage.Chat, $"Команда №{number} не удалена.");
+                botClient.SendMessage(botMessage.Chat, "Команда не удалена.");
             }
     	}
 
