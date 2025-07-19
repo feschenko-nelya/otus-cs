@@ -34,7 +34,7 @@ namespace HW2.User
 
         public override string GetInfo()
         {
-            return Name;
+            return $"{Name} - {CreatedAt.ToString("dd.MM.yyyy hh:mm:ss")} - {Id}";
         }
 
         public override string GetCode()

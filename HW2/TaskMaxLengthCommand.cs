@@ -1,15 +1,14 @@
-﻿using System;
-using HW3;
-using HW4;
+﻿using HW2.Item;
 using HW2.User;
-using Otus.ToDoList.ConsoleBot.Types;
+using HW3;
 using Otus.ToDoList.ConsoleBot;
+using Otus.ToDoList.ConsoleBot.Types;
 
 public class TaskMaxLengthCommand : AbstractCommand
 {
     private readonly int _minLength = 50;
 
-    public TaskMaxLengthCommand(UserService userService) : base(userService)
+    public TaskMaxLengthCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
 	{
 	}
     public override string GetCode()
@@ -19,9 +18,20 @@ public class TaskMaxLengthCommand : AbstractCommand
 
     public override void Execute(ITelegramBotClient botClient, Message botMessage)
     {
-        if (_userService == null || !IsEnabled(botMessage.From.Id))
+        string errorMessage;
+        ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
+
+        if (toDoUser == null)
         {
-            botClient.SendMessage(botMessage.Chat, "Команда не доступна.");
+            botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage);
+
+            return;
+        }
+
+        if (_toDoService == null)
+        {
+            botClient.SendMessage(botMessage.Chat, "Нет доступа к задачам пользователя.");
+
             return;
         }
 
@@ -45,7 +55,7 @@ public class TaskMaxLengthCommand : AbstractCommand
             return;
         }
 
-        if (_userService.SetUserCommandMaxLength(botMessage.From.Id, length))
+        if (_toDoService.SetMaxLength(toDoUser.UserId, length))
         {
             botClient.SendMessage(botMessage.Chat, $"Установлена максимальная длина задачи: {length}.");
         }

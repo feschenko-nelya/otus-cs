@@ -1,24 +1,37 @@
 ﻿using HW2.User;
 using HW3;
 
-public class UserCommands : CommandContainer
+public class ToDoItems : List<ToDoItem>
 {
     public short MaxNumber { get; set; }
 	public short MaxLength { get; set; }
-    public UserCommands() : base()
+    public ToDoItems() : base()
 	{
 		MaxNumber = 0;
 		MaxLength = 0;
 	}
 
-	public UserCommands? GetByState(ToDoItemState commandState)
-	{
-		if (this.Count == 0)
-		{
-			return null;
-		}
+    public ToDoItem? GetByGuid(Guid id)
+    {
+        foreach (ToDoItem item in this)
+        {
+            if (item.Id.Equals(id))
+            {
+                return item;
+            }
+        }
 
-        UserCommands result = new();
+        return null;
+    }
+
+	public ToDoItems GetByState(ToDoItemState commandState)
+	{
+        ToDoItems result = new();
+
+        if (this.Count == 0)
+		{
+			return result;
+		}
 
         foreach (ToDoItem cmd in this)
         {

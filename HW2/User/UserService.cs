@@ -11,7 +11,7 @@ namespace HW2.User
     public class UserService : IUserService
     {
         private List<ToDoUser> _users = new List<ToDoUser>();
-        private Dictionary<long, UserCommands> _usersCommands = new();
+
         public ToDoUser? GetUser(long telegramUserId)
         {
             foreach (ToDoUser user in _users)
@@ -54,20 +54,9 @@ namespace HW2.User
             return (GetUser(telegramUserId) != null);
         }
 
-        public UserCommands? GetUserCommandsByState(long telegramUserId, ToDoItemState commandState)
-        {
-            UserCommands? userCommands = new();
-            if (_usersCommands.TryGetValue(telegramUserId, out userCommands))
-            {
-                return userCommands.GetByState(commandState);
-            }
-
-            return null;
-        }
-
         public bool AddUserCommand(long telegramUserId, string commandName)
         {
-            UserCommands? userCommands;
+            ToDoItems? userCommands;
 
             if (!_usersCommands.TryGetValue(telegramUserId, out userCommands))
             {
@@ -84,7 +73,7 @@ namespace HW2.User
 
         public bool RemoveUserCommand(long telegramUserId, int index)
         {
-            UserCommands? userCommands;
+            ToDoItems? userCommands;
 
             if (!_usersCommands.TryGetValue(telegramUserId, out userCommands))
             {
@@ -96,43 +85,6 @@ namespace HW2.User
                 userCommands.RemoveAt(index);
                 return true;
             }            
-
-            return false;
-        }
-
-        public bool SetUserCommandsMaxNumber(long telegramUserId, short maxNumber)
-        {
-            UserCommands? userCommands;
-
-            if (!_usersCommands.TryGetValue(telegramUserId, out userCommands))
-            {
-                return false;
-            }
-
-            if ((userCommands != null) && (userCommands.Count > 0))
-            {
-                userCommands.MaxNumber = maxNumber;
-
-                return true;
-            }
-
-            return false;
-        }
-        public bool SetUserCommandMaxLength(long telegramUserId, short maxLength)
-        {
-            UserCommands? userCommands;
-
-            if (!_usersCommands.TryGetValue(telegramUserId, out userCommands))
-            {
-                return false;
-            }
-
-            if ((userCommands != null) && (userCommands.Count > 0))
-            {
-                userCommands.MaxLength = maxLength;
-
-                return true;
-            }
 
             return false;
         }

@@ -1,4 +1,5 @@
 ﻿
+using HW2.Item;
 using HW2.User;
 using HW3;
 using HW6;
@@ -10,11 +11,12 @@ namespace HW2
     internal class UpdateHandler : IUpdateHandler
     {
         private UserService _userService = new UserService();
+        private ToDoService _toDoService = new ToDoService();
         private CommandInvoker _commandInvoker;
 
         public UpdateHandler()
         {
-            _commandInvoker = new CommandInvoker(_userService);
+            _commandInvoker = new CommandInvoker(_userService, _toDoService);
         }
 
         public void HandleUpdateAsync(ITelegramBotClient botClient, Update update)

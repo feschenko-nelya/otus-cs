@@ -1,8 +1,9 @@
 ﻿using System;
+using HW2.Item;
 using HW2.User;
 using HW3;
-using Otus.ToDoList.ConsoleBot.Types;
 using Otus.ToDoList.ConsoleBot;
+using Otus.ToDoList.ConsoleBot.Types;
 
 namespace HW4
 {
@@ -11,7 +12,7 @@ namespace HW4
         private readonly short _minNumber = 1;
         private readonly short _maxNumber = 100;
 
-        public TasksMaxNumberCommand(UserService userService) : base(userService)
+        public TasksMaxNumberCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
         {
 		}
         public override string GetCode()
@@ -21,9 +22,20 @@ namespace HW4
 
         public override void Execute(ITelegramBotClient botClient, Message botMessage)
         {
-            if (_userService == null || !IsEnabled(botMessage.From.Id))
+            string errorMessage;
+            ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
+
+            if (toDoUser == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Команда не доступна.");
+                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage);
+
+                return;
+            }
+
+            if (_toDoService == null)
+            {
+                botClient.SendMessage(botMessage.Chat, "Нет доступа к задачам пользователя.");
+
                 return;
             }
 
@@ -49,7 +61,7 @@ namespace HW4
                 return;
             }
 
-            if (_userService.SetUserCommandsMaxNumber(botMessage.From.Id, number))
+            if (_toDoService.SetMaxNumber(toDoUser.UserId, number))
             {
                 botClient.SendMessage(botMessage.Chat, $"Установлено максимально допустимое количество задач: {number}.");
             }
