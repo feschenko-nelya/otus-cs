@@ -54,12 +54,12 @@ namespace HW2.User
             return (GetUser(telegramUserId) != null);
         }
 
-        public List<string>? GetUserCommandsNames(long telegramUserId)
+        public UserCommands? GetUserCommandsByState(long telegramUserId, ToDoItemState commandState)
         {
             UserCommands? userCommands = new();
             if (_usersCommands.TryGetValue(telegramUserId, out userCommands))
             {
-                return userCommands.GetNames();
+                return userCommands.GetByState(commandState);
             }
 
             return null;

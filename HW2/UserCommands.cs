@@ -11,21 +11,24 @@ public class UserCommands : CommandContainer
 		MaxLength = 0;
 	}
 
-	public List<string>? GetNames()
+	public UserCommands? GetByState(ToDoItemState commandState)
 	{
 		if (this.Count == 0)
 		{
 			return null;
 		}
 
-		List<string> names = new();
+        UserCommands result = new();
 
-        foreach (AbstractCommand cmd in this)
+        foreach (ToDoItem cmd in this)
         {
-            names.Add(cmd.GetCode());
+            if (cmd.State == commandState)
+            {
+                result.Add(cmd);
+            }
         }
 
-        return names;
+        return result;
 	}
 
 	public bool HasDuplicate(string name)

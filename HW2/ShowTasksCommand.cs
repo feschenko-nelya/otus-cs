@@ -32,9 +32,9 @@ namespace HW3
                 return;
 			}
 
-			List<string>? cmdNames = _userService.GetUserCommandsNames(botMessage.From.Id);
+            UserCommands? userCommands = _userService.GetUserCommandsByState(botMessage.From.Id, ToDoItemState.Active);
 
-			if ((cmdNames == null) || ((cmdNames != null) && (cmdNames.Count == 0)))
+			if ((userCommands == null) || ((userCommands != null) && (userCommands.Count == 0)))
 			{
                 botClient.SendMessage(botMessage.Chat, "Список задач пуст.");
 
@@ -42,9 +42,13 @@ namespace HW3
             }
 
 			StringBuilder str = new();
-			for (int i = 0; i < cmdNames.Count; ++i)
+			for (int i = 0; i < userCommands.Count; ++i)
 			{
-				str.AppendLine($"{i + 1}. {cmdNames.ElementAt(i)}");
+				ToDoItem item = (ToDoItem)userCommands.ElementAt(i);
+				if (item != null)
+				{
+					str.AppendLine($"{i + 1}. {item.Name} - {item.CreatedAt.ToString("dd.MM.yyyy hh:mm:ss")} - {item.Id}");
+				}
 			}
 
             botClient.SendMessage(botMessage.Chat, str.ToString());
