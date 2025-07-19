@@ -23,6 +23,7 @@ namespace HW6
             _mainCommands.Add(new TaskMaxLengthCommand(_userService, _toDoService));
             _mainCommands.Add(new AddTaskCommand(_userService, _toDoService));
             _mainCommands.Add(new RemoveTaskCommand(_userService, _toDoService));
+            _mainCommands.Add(new CompleteTaskCommand(_userService, _toDoService));
             _mainCommands.Add(new ShowTasksCommand(_userService, _toDoService));
             _mainCommands.Add(new InfoCommand());
             _mainCommands.Add(new HelpCommand(_mainCommands));

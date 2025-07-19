@@ -37,25 +37,23 @@ namespace HW2.Item
             return result;
         }
 
-        public void MarkCompleted(Guid userId, Guid itemId)
+        public bool MarkCompleted(Guid userId, int itemNumber)
         {
             ToDoItems? userItems = _usersItems.GetValueOrDefault(userId);
-            
-            ToDoItem? item;
 
             if (userItems == null)
             {
-                return;
+                return false;
             }
 
-            item = userItems.GetByGuid(itemId);
-
-            if (item == null)
+            if (itemNumber < 0 || itemNumber >= userItems.Count)
             {
-                return;
+                return false;
             }
 
-            item.SetCompleted();
+            userItems.ElementAt(itemNumber).SetCompleted();
+
+            return true;
         }
 
         public ToDoItem Add(Guid userId, string name)
@@ -83,14 +81,14 @@ namespace HW2.Item
                 return false;
             }
 
-            for (int i = 0; (i <= itemNumber) && (i < userItems.Count); i++)
+            if (itemNumber < 0 || itemNumber >= userItems.Count)
             {
-                userItems.RemoveAt(i);
-
-                return true;
+                return false;
             }
 
-            return false;
+            userItems.RemoveAt(userItems.Count);
+
+            return true;
         }
         public bool SetMaxNumber(Guid userId, short maxNumber)
         {

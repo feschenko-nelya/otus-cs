@@ -8,7 +8,7 @@ namespace HW2
         //Возвращает ToDoItem для UserId со статусом Active
         IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId);
         ToDoItem Add(Guid userId, string name);
-        void MarkCompleted(Guid userId, Guid itemId);
+        bool MarkCompleted(Guid userId, Guid itemId);
         bool Delete(Guid userId, Guid itemId);
     }
 }
