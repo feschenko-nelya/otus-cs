@@ -4,7 +4,12 @@ using Otus.ToDoList.ConsoleBot.Types;
 
 namespace HW2.User
 {
-    public enum ToDoItemState { None, Active, Completed };
+    public enum ToDoItemState 
+    { 
+        None, 
+        Active, 
+        Completed 
+    };
     public class ToDoItem : AbstractCommand
     {
         public Guid Id { get; init; }
@@ -35,6 +40,19 @@ namespace HW2.User
         public override string GetInfo()
         {
             return $"{Name} - {CreatedAt.ToString("dd.MM.yyyy hh:mm:ss")} - {Id}";
+        }
+
+        public string GetStateName()
+        {
+            switch (State)
+            {
+            case ToDoItemState.Active:
+                return "активна";
+            case ToDoItemState.Completed:
+                return "выполнена";
+            }
+
+            return "-";
         }
 
         public override string GetCode()
