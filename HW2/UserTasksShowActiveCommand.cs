@@ -8,14 +8,14 @@ using Otus.ToDoList.ConsoleBot.Types;
 
 namespace HW3
 {
-	public class ShowTasksCommand : AbstractCommand
+	public class UserTasksShowActiveCommand : AbstractCommand
 	{
-        public ShowTasksCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
+        public UserTasksShowActiveCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
         {
 		}
         public override string GetCode()
         {
-            return "/showtasks";
+            return "/showactivetasks";
         }
 
         public override void Execute(ITelegramBotClient botClient, Message botMessage)
