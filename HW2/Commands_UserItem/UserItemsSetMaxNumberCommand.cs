@@ -7,12 +7,12 @@ using Otus.ToDoList.ConsoleBot.Types;
 
 namespace HW4
 {
-	public class TasksMaxNumberCommand : AbstractCommand
+	public class UserItemsSetMaxNumberCommand : AbstractCommand
 	{
         private readonly short _minNumber = 1;
         private readonly short _maxNumber = 100;
 
-        public TasksMaxNumberCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
+        public UserItemsSetMaxNumberCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
         {
 		}
         public override string GetCode()

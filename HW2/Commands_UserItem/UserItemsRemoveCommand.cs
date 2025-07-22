@@ -1,15 +1,13 @@
-﻿using System;
-using HW2.User;
-using HW4;
+﻿using HW2.User;
 using Otus.ToDoList.ConsoleBot.Types;
 using Otus.ToDoList.ConsoleBot;
 using HW2.Item;
 
 namespace HW3
 {
-	public class RemoveTaskCommand : AbstractCommand
+	public class UserItemsRemoveCommand : AbstractCommand
 	{
-		public RemoveTaskCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
+		public UserItemsRemoveCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
         {
         }
         public override string GetCode()

@@ -6,9 +6,9 @@ using Otus.ToDoList.ConsoleBot.Types;
 
 namespace HW3
 {
-    public class AddTaskCommand : AbstractCommand
+    public class UserItemsAddCommand : AbstractCommand
     {
-        public AddTaskCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
+        public UserItemsAddCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
         {
 	    }
 

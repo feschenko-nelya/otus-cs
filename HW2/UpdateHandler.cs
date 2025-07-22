@@ -2,7 +2,7 @@
 using HW2.Item;
 using HW2.User;
 using HW3;
-using HW6;
+using HW4;
 using Otus.ToDoList.ConsoleBot;
 using Otus.ToDoList.ConsoleBot.Types;
 
@@ -12,18 +12,48 @@ namespace HW2
     {
         private UserService _userService = new UserService();
         private ToDoService _toDoService = new ToDoService();
-        private CommandInvoker _commandInvoker;
+        private CommandContainer _mainCommands = new();
 
         public UpdateHandler()
         {
-            _commandInvoker = new CommandInvoker(_userService, _toDoService);
+            _mainCommands.Add(new StartCommand(_userService));
+            _mainCommands.Add(new UserItemsSetMaxNumberCommand(_userService, _toDoService));
+            _mainCommands.Add(new UserItemsSetMaxLengthCommand(_userService, _toDoService));
+            _mainCommands.Add(new UserItemsAddCommand(_userService, _toDoService));
+            _mainCommands.Add(new UserItemsRemoveCommand(_userService, _toDoService));
+            _mainCommands.Add(new UserItemsSetCompleteCommand(_userService, _toDoService));
+            _mainCommands.Add(new UserItemsShowAllCommand(_userService, _toDoService));
+            _mainCommands.Add(new UserTasksShowActiveCommand(_userService, _toDoService));
+            _mainCommands.Add(new InfoCommand());
+            _mainCommands.Add(new EndCommand(_userService));
+            _mainCommands.Add(new HelpCommand(_mainCommands));
         }
 
         public void HandleUpdateAsync(ITelegramBotClient botClient, Update update)
         {
             try
             {
-                _commandInvoker.Invoke(botClient, update.Message);
+                Message botMesage = update.Message;
+
+                if (string.IsNullOrEmpty(botMesage.Text))
+                {
+                    return;
+                }
+
+                string[] args = update.Message.Text.Split(' ');
+                AbstractCommand? command = _mainCommands.Get(args[0]);
+
+                if (command == null)
+                {
+                    throw new Exception("Отсутствует объект команды: " + args[0]);
+                }
+
+                if (!command.IsEnabled(botMesage.From.Id))
+                {
+                    throw new Exception($"Команда '{command.GetCode()}' недоступна.");
+                }
+
+                command.Execute(botClient, botMesage);
             }
             catch (Exception exception)
             {

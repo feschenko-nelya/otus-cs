@@ -4,9 +4,9 @@ using HW3;
 using Otus.ToDoList.ConsoleBot;
 using Otus.ToDoList.ConsoleBot.Types;
 
-public class CompleteTaskCommand : AbstractCommand
+public class UserItemsSetCompleteCommand : AbstractCommand
 {
-	public CompleteTaskCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
+	public UserItemsSetCompleteCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
 	{
 	}
 

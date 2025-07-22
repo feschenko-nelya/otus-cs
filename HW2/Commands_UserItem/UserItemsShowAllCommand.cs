@@ -5,9 +5,9 @@ using HW3;
 using Otus.ToDoList.ConsoleBot;
 using Otus.ToDoList.ConsoleBot.Types;
 
-public class ShowAllTasksCommand : AbstractCommand
+public class UserItemsShowAllCommand : AbstractCommand
 {
-	public ShowAllTasksCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
+	public UserItemsShowAllCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
 	{
 	}
 

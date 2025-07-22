@@ -4,11 +4,11 @@ using HW3;
 using Otus.ToDoList.ConsoleBot;
 using Otus.ToDoList.ConsoleBot.Types;
 
-public class TaskMaxLengthCommand : AbstractCommand
+public class UserItemsSetMaxLengthCommand : AbstractCommand
 {
     private readonly int _minLength = 50;
 
-    public TaskMaxLengthCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
+    public UserItemsSetMaxLengthCommand(UserService userService, ToDoService toDoService) : base(userService, toDoService)
 	{
 	}
     public override string GetCode()

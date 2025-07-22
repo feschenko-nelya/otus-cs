@@ -7,7 +7,7 @@ namespace HW2.Item
 {
     public class ToDoService : IToDoService
     {
-        private Dictionary<Guid, ToDoItems> _usersItems = new();
+        private readonly Dictionary<Guid, ToDoItems> _usersItems = new();
         
         public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
         {
