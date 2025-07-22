@@ -1,52 +1,65 @@
 ﻿
-using System.Collections.Generic;
 using HW2.User;
-using Otus.ToDoList.ConsoleBot.Types;
 
 namespace HW2.Item
 {
     public class ToDoService : IToDoService
     {
-        private readonly Dictionary<Guid, ToDoItems> _usersItems = new();
-        
+        private readonly Dictionary<Guid, List<ToDoItem>> _usersItems = new();
+        private struct ItemLimit
+        {
+            public int number = 10;
+            public int length = 250;
+
+            public ItemLimit()
+            {
+            }
+        }
+        private Dictionary<Guid, ItemLimit> _usersLimits = new();
         public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
         {
-            ToDoItems? result = _usersItems.GetValueOrDefault(userId);
+            List<ToDoItem>? items = _usersItems.GetValueOrDefault(userId);
 
-            if (result == null)
+            if (items == null)
             {
-                result = [];
+                items = [];
             }
             else
             {
-                result.GetByState(ToDoItemState.Active);
+                foreach (ToDoItem item in items)
+                {
+                    if (item.State == ToDoItemState.Active)
+                    {
+                        items.Add(item);
+                    }
+                }
             }
 
-            return result;
+            return items;
         }
 
         public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
         {
-            ToDoItems? result = _usersItems.GetValueOrDefault(userId);
+            List<ToDoItem>? items = _usersItems.GetValueOrDefault(userId);
 
-            if (result == null)
+            if (items == null)
             {
-                result = [];
+                items = [];
             }
 
-            return result;
+            return items;
         }
 
         public bool MarkCompleted(Guid userId, Guid itemId)
         {
-            ToDoItems? userItems = _usersItems.GetValueOrDefault(userId);
+            List<ToDoItem>? userItems = _usersItems.GetValueOrDefault(userId);
 
             if (userItems == null)
             {
                 return false;
             }
 
-            ToDoItem? item = userItems.GetByGuid(itemId);
+            ToDoItem? item = GetItemByGuid(userItems, itemId);
 
             if (item == null)
             {
@@ -60,7 +73,7 @@ namespace HW2.Item
 
         public ToDoItem Add(Guid userId, string name)
         {
-            ToDoItems? userItems = _usersItems.GetValueOrDefault(userId);
+            List<ToDoItem>? userItems = _usersItems.GetValueOrDefault(userId);
 
             if (userItems == null)
             {
@@ -68,22 +81,54 @@ namespace HW2.Item
                 _usersItems.Add(userId, userItems);
             }
 
-            ToDoItem newItem = new ToDoItem(name);
+            ItemLimit userItemLimit = GetUserItemLimit(userId);
+
+            if (userItems.Count == userItemLimit.number)
+            {
+                throw new TaskCountLimitException(userItemLimit.number);
+            }
+
+            if (name.Length > userItemLimit.length)
+            {
+                throw new TaskLengthLimitException(name.Length, userItemLimit.length);
+            }
+
+            if (HasItemDuplicate(userItems, name))
+            {
+                throw new DuplicateTaskException(name);
+            }
+
+            var newItem = new ToDoItem(name);
             userItems.Add(newItem);
 
             return newItem;
         }
+        private ItemLimit GetUserItemLimit(Guid userId)
+        {
+            ItemLimit userItemLimit;
+            if (_usersLimits.ContainsKey(userId))
+            {
+                userItemLimit = _usersLimits[userId];
+            }
+            else
+            {
+                userItemLimit = new();
+                _usersLimits[userId] = userItemLimit;
+            }
+
+            return userItemLimit;
+        }
 
         public bool Delete(Guid userId, Guid itemId)
         {
-            ToDoItems? userItems = _usersItems.GetValueOrDefault(userId);
+            List<ToDoItem>? userItems = _usersItems.GetValueOrDefault(userId);
 
             if (userItems == null)
             {
                 return false;
             }
 
-            ToDoItem? item = userItems.GetByGuid(itemId);
+            ToDoItem? item = GetItemByGuid(userItems, itemId);
 
             if (item == null)
             {
@@ -92,31 +137,41 @@ namespace HW2.Item
 
             return userItems.Remove(item);
         }
-        public bool SetMaxNumber(Guid userId, short maxNumber)
+        public void SetMaxNumber(Guid userId, short maxNumber)
         {
-            ToDoItems? userItems = _usersItems.GetValueOrDefault(userId);
-
-            if (userItems == null)
-            {
-                return false;
-            }
-
-            userItems.MaxNumber = maxNumber;
-
-            return true;
+            ItemLimit userItemLimit = GetUserItemLimit(userId);
+            userItemLimit.number = maxNumber;
         }
-        public bool SetMaxLength(Guid userId, short maxLength)
+        public void SetMaxLength(Guid userId, short maxLength)
         {
-            ToDoItems? userItems = _usersItems.GetValueOrDefault(userId);
+            ItemLimit userItemLimit = GetUserItemLimit(userId);
+            userItemLimit.length = maxLength;
+        }
 
-            if (userItems == null)
+        private ToDoItem? GetItemByGuid(List<ToDoItem> userItems, Guid id)
+        {
+            foreach (ToDoItem item in userItems)
             {
-                return false;
+                if (item.Id.Equals(id))
+                {
+                    return item;
+                }
             }
 
-            userItems.MaxLength = maxLength;
+            return null;
+        }
 
-            return true;
+        public bool HasItemDuplicate(List<ToDoItem> userItems, string name)
+        {
+            foreach (var item in userItems)
+            {
+                if (item.Name == name)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

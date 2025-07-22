@@ -55,14 +55,9 @@ public class UserItemsSetMaxLengthCommand : AbstractCommand
             return;
         }
 
-        if (_toDoService.SetMaxLength(toDoUser.UserId, length))
-        {
-            botClient.SendMessage(botMessage.Chat, $"Установлена максимальная длина задачи: {length}.");
-        }
-        else
-        {
-            botClient.SendMessage(botMessage.Chat, "Максимальная длина задачи не установлена.");
-        }
+        _toDoService.SetMaxLength(toDoUser.UserId, length);
+
+        botClient.SendMessage(botMessage.Chat, $"Установлена максимальная длина задачи: {length}.");
     }
 
     public override string GetInfo()

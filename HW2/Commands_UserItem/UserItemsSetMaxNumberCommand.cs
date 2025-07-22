@@ -61,14 +61,9 @@ namespace HW4
                 return;
             }
 
-            if (_toDoService.SetMaxNumber(toDoUser.UserId, number))
-            {
-                botClient.SendMessage(botMessage.Chat, $"Установлено максимально допустимое количество задач: {number}.");
-            }
-            else
-            {
-                botClient.SendMessage(botMessage.Chat, "Максимально допустимое количество задач не установлено.");
-            }
+            _toDoService.SetMaxNumber(toDoUser.UserId, number);
+
+            botClient.SendMessage(botMessage.Chat, $"Установлено максимально допустимое количество задач: {number}.");
         }
 
         public override string GetInfo()
