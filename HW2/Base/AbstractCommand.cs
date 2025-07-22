@@ -1,5 +1,4 @@
-﻿using System;
-using Otus.ToDoList.ConsoleBot.Types;
+﻿using Otus.ToDoList.ConsoleBot.Types;
 using Otus.ToDoList.ConsoleBot;
 using HW2.User;
 using HW2.Item;

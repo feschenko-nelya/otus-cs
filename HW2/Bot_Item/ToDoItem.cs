@@ -1,8 +1,4 @@
-﻿using HW3;
-using Otus.ToDoList.ConsoleBot;
-using Otus.ToDoList.ConsoleBot.Types;
-
-namespace HW2.User
+﻿namespace HW2.User
 {
     public enum ToDoItemState 
     { 
@@ -10,16 +6,15 @@ namespace HW2.User
         Active, 
         Completed 
     };
-    public class ToDoItem : AbstractCommand
+    public class ToDoItem
     {
         public Guid Id { get; init; }
-        private ToDoUser? User;
         public string Name { get; init; }
         public DateTime CreatedAt { get; init; }
         public ToDoItemState State { get; private set; }
         public DateTime? StateChangedAt { get; private set; }
 
-        public ToDoItem(string name) : base(null)
+        public ToDoItem(string name)
         {
             Id = Guid.NewGuid();
             Name = name;
@@ -31,13 +26,7 @@ namespace HW2.User
             State = ToDoItemState.Completed;
             StateChangedAt = DateTime.Now;
         }
-
-        public override void Execute(ITelegramBotClient botClient, Message botMessage)
-        {
-            botClient.SendMessage(botMessage.Chat, Name);
-        }
-
-        public override string GetInfo()
+        public string toString()
         {
             return $"{Name} - {CreatedAt.ToString("dd.MM.yyyy hh:mm:ss")} - {Id}";
         }
@@ -53,15 +42,6 @@ namespace HW2.User
             }
 
             return "-";
-        }
-
-        public override string GetCode()
-        {
-            return Name;
-        }
-        public override bool IsEnabled(long telegramUserId)
-        {
-            return true;
         }
     }
 }

@@ -52,7 +52,7 @@ namespace HW3
 				ToDoItem item = userCommands.ElementAt(i);
 				if (item != null)
 				{
-					str.AppendLine($"{i + 1}. {item.GetInfo()}");
+					str.AppendLine($"{i + 1}. {item.toString()}");
 				}
 			}
 

@@ -45,7 +45,7 @@ public class UserItemsShowAllCommand : AbstractCommand
             ToDoItem item = userCommands.ElementAt(i);
             if (item != null)
             {
-                str.AppendLine($" ({item.GetStateName()}) {item.GetInfo()}");
+                str.AppendLine($" ({item.GetStateName()}) {item.toString()}");
             }
         }
 
