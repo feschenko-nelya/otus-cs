@@ -100,7 +100,7 @@ namespace HW2
 
                 if (command.isUsers && !IsEnabled(botMesage.From.Id))
                 {
-                    throw new Exception($"Команда '{command.code}' недоступна."));
+                    throw new Exception($"Команда '{command.code}' недоступна.");
                 }
 
                 command.execute(botClient, botMesage);
