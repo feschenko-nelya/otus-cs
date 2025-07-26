@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using HW3;
-
+﻿
 namespace HW2.User
 {
     public class UserService : IUserService
@@ -48,45 +41,6 @@ namespace HW2.User
                     break;
                 }
             }
-        }
-        public bool IsUserRegistered(long telegramUserId)
-        {
-            return (GetUser(telegramUserId) != null);
-        }
-
-        public bool AddUserCommand(long telegramUserId, string commandName)
-        {
-            ToDoItems? userCommands;
-
-            if (!_usersCommands.TryGetValue(telegramUserId, out userCommands))
-            {
-                return false;
-            }
-
-            if (userCommands == null)
-            {
-                return false;
-            }
-
-            return userCommands.TryAdd(commandName);
-        }
-
-        public bool RemoveUserCommand(long telegramUserId, int index)
-        {
-            ToDoItems? userCommands;
-
-            if (!_usersCommands.TryGetValue(telegramUserId, out userCommands))
-            {
-                return false;
-            }
-
-            if ((userCommands != null) && (userCommands.Count > 0))
-            {
-                userCommands.RemoveAt(index);
-                return true;
-            }            
-
-            return false;
         }
     }
 }
