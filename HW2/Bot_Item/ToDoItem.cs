@@ -20,6 +20,7 @@
             Name = name;
             State = ToDoItemState.Active;
             StateChangedAt = DateTime.Now;
+            CreatedAt = DateTime.Now;
         }
         public void SetCompleted()
         {
@@ -28,7 +29,7 @@
         }
         public string toString()
         {
-            return $"{Name} - {CreatedAt.ToString("dd.MM.yyyy hh:mm:ss")} - {Id}";
+            return $"{Name} - {CreatedAt.ToString("dd.MM.yyyy HH:mm:ss")} - {Id}";
         }
 
         public string GetStateName()

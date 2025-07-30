@@ -6,36 +6,39 @@ namespace HW2.Item
     public class ToDoService : IToDoService
     {
         private readonly Dictionary<Guid, List<ToDoItem>> _usersItems = new();
+
         private struct ItemLimit
         {
-            public int number = 10;
-            public int length = 250;
+            public int Number { get; set; }
+            public int Length { get; set; }
 
             public ItemLimit()
             {
+                Number = 10;
+                Length = 250;
             }
         }
         private Dictionary<Guid, ItemLimit> _usersLimits = new();
         public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
         {
-            List<ToDoItem>? items = _usersItems.GetValueOrDefault(userId);
+            List<ToDoItem>? userItems = _usersItems.GetValueOrDefault(userId);
 
-            if (items == null)
+            if (userItems == null)
             {
-                items = [];
+                return [];
             }
-            else
+
+            List<ToDoItem> activeItems = new();
+
+            foreach (ToDoItem item in userItems)
             {
-                foreach (ToDoItem item in items)
+                if (item.State == ToDoItemState.Active)
                 {
-                    if (item.State == ToDoItemState.Active)
-                    {
-                        items.Add(item);
-                    }
+                    activeItems.Add(item);
                 }
             }
 
-            return items;
+            return activeItems;
         }
 
         public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
@@ -44,7 +47,7 @@ namespace HW2.Item
 
             if (items == null)
             {
-                items = [];
+                return [];
             }
 
             return items;
@@ -83,14 +86,14 @@ namespace HW2.Item
 
             ItemLimit userItemLimit = GetUserItemLimit(userId);
 
-            if (userItems.Count == userItemLimit.number)
+            if (userItems.Count == userItemLimit.Number)
             {
-                throw new TaskCountLimitException(userItemLimit.number);
+                throw new TaskCountLimitException(userItemLimit.Number);
             }
 
-            if (name.Length > userItemLimit.length)
+            if (name.Length > userItemLimit.Length)
             {
-                throw new TaskLengthLimitException(name.Length, userItemLimit.length);
+                throw new TaskLengthLimitException(name.Length, userItemLimit.Length);
             }
 
             if (HasItemDuplicate(userItems, name))
@@ -102,21 +105,6 @@ namespace HW2.Item
             userItems.Add(newItem);
 
             return newItem;
-        }
-        private ItemLimit GetUserItemLimit(Guid userId)
-        {
-            ItemLimit userItemLimit;
-            if (_usersLimits.ContainsKey(userId))
-            {
-                userItemLimit = _usersLimits[userId];
-            }
-            else
-            {
-                userItemLimit = new();
-                _usersLimits[userId] = userItemLimit;
-            }
-
-            return userItemLimit;
         }
 
         public bool Delete(Guid userId, Guid itemId)
@@ -139,13 +127,49 @@ namespace HW2.Item
         }
         public void SetMaxNumber(Guid userId, short maxNumber)
         {
-            ItemLimit userItemLimit = GetUserItemLimit(userId);
-            userItemLimit.number = maxNumber;
+            ItemLimit userItemLimit;
+            if (_usersLimits.ContainsKey(userId))
+            {
+                userItemLimit = _usersLimits[userId];
+            }
+            else
+            {
+                userItemLimit = new();
+            }
+
+            userItemLimit.Number = maxNumber;
+            _usersLimits[userId] = userItemLimit;
         }
         public void SetMaxLength(Guid userId, short maxLength)
         {
-            ItemLimit userItemLimit = GetUserItemLimit(userId);
-            userItemLimit.length = maxLength;
+            ItemLimit userItemLimit;
+
+            if (_usersLimits.ContainsKey(userId))
+            {
+                userItemLimit = _usersLimits[userId];
+            }
+            else
+            {
+                userItemLimit = new();
+            }
+
+            userItemLimit.Length = maxLength;
+            _usersLimits[userId] = userItemLimit;
+        }
+        private ItemLimit GetUserItemLimit(Guid userId)
+        {
+            ItemLimit userItemLimit;
+            if (_usersLimits.ContainsKey(userId))
+            {
+                userItemLimit = (ItemLimit)_usersLimits[userId];
+            }
+            else
+            {
+                userItemLimit = new();
+                _usersLimits[userId] = userItemLimit;
+            }
+
+            return userItemLimit;
         }
 
         private ToDoItem? GetItemByGuid(List<ToDoItem> userItems, Guid id)

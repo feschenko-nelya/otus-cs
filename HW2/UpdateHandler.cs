@@ -44,7 +44,8 @@ namespace HW2
                                           "Информация о версии и дате создания программы."));
             _commands.Add(new CommandData("/exit", 
                                           EndCommand, 
-                                          "Завершение работы программы."));
+                                          "Завершение работы программы.",
+                                          true));
             _commands.Add(new CommandData("/help", 
                                           HelpCommand, 
                                           "Краткая информация о программе."));
@@ -81,47 +82,59 @@ namespace HW2
 
         public void HandleUpdateAsync(ITelegramBotClient botClient, Update update)
         {
+            Message botMessage = update.Message;
+
             try
             {
-                Message botMesage = update.Message;
-
-                if (string.IsNullOrEmpty(botMesage.Text))
+                if (string.IsNullOrEmpty(botMessage.Text))
                 {
                     return;
                 }
 
                 string[] args = update.Message.Text.Split(' ');
-                CommandData command = _commands.Find(command => command.code == args[0]);
+                CommandData command = _commands.Find( command => command.code == args[0]);
+
+                if (command.Equals(default(CommandData)))
+                {
+                    botClient.SendMessage(botMessage.Chat, $"Команда '{args[0]}' не поддерживается. Введите другую.");
+                    return;
+                }
 
                 if (command.code.Length == 0)
                 {
                     throw new Exception("Отсутствует объект команды: " + args[0]);
                 }
 
-                if (command.isUsers && !IsEnabled(botMesage.From.Id))
+                if (command.isUsers && !IsEnabled(botMessage.From.Id))
                 {
                     throw new Exception($"Команда '{command.code}' недоступна.");
                 }
 
-                command.execute(botClient, botMesage);
+                command.execute(botClient, botMessage);
             }
             catch (Exception exception)
             {
-                ProcessException(botClient, update.Message.Chat, exception);
+                ProcessException(botClient, botMessage.Chat, exception);
             }
         }
 
         private void StartCommand(ITelegramBotClient botClient, Message botMessage)
         {
-            ToDoUser? toDoUser = _userService.RegisterUser(botMessage.From.Id, botMessage.From.Username);
+            string userName = "_";
+            if (botMessage.From.Username != null)
+            {
+                userName = botMessage.From.Username;
+            }
+
+            ToDoUser? toDoUser = _userService.RegisterUser(botMessage.From.Id, userName);
 
             if (toDoUser == null)
             {
-                botClient.SendMessage(botMessage.Chat, $"Здравствуйте, {botMessage.From.Username}. Вы не зарегистрированы.");
+                botClient.SendMessage(botMessage.Chat, $"Здравствуйте, {userName}. Вы не зарегистрированы.");
             }
             else
             {
-                botClient.SendMessage(botMessage.Chat, $"Здравствуйте, {toDoUser.TelegramUserName}. Вы зарегистрированы.");
+                botClient.SendMessage(botMessage.Chat, $"{toDoUser.TelegramUserName}, Вы зарегистрированы.");
             }
         }
 
@@ -195,7 +208,7 @@ namespace HW2
             ToDoItem? newItem = _toDoService.Add(toDoUser.UserId, string.Join(" ", args));
             if (newItem != null)
             {
-                botClient.SendMessage(botMessage.Chat, "Задача добавлена.");
+                botClient.SendMessage(botMessage.Chat, $"Задача '{newItem.Name}' добавлена.");
             }
             else
             {
@@ -295,13 +308,13 @@ namespace HW2
             short length = -1;
             if (!short.TryParse(args.ElementAt(0), out length))
             {
-                botClient.SendMessage(botMessage.Chat, "Значение неверно.");
+                botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).");
                 return;
             }
 
             if (length < minLength)
             {
-                botClient.SendMessage(botMessage.Chat, "Введено неоптимальное значение длины задачи.");
+                botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).");
                 return;
             }
 
@@ -421,7 +434,7 @@ namespace HW2
                 return;
             }
 
-            var userCommands = _toDoService.GetActiveByUserId(toDoUser.UserId);
+            var userCommands = _toDoService.GetAllByUserId(toDoUser.UserId);
 
             if (userCommands.Count == 0)
             {
@@ -445,7 +458,6 @@ namespace HW2
 
         private static void ShowException(ITelegramBotClient botClient, Chat botChat, string message)
         {
-            botClient.SendMessage(botChat, "");
             botClient.SendMessage(botChat, message);
         }
         private List<string> GetArguments(string line)
