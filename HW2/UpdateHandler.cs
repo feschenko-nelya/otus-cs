@@ -9,7 +9,7 @@ namespace HW2
     internal class UpdateHandler : IUpdateHandler
     {
         private IUserService _userService;
-        private ToDoService _toDoService = new ToDoService();
+        private IToDoService _toDoService;
 
         private static readonly Version _version = new Version(1, 0);
         private static readonly DateTime _creationDate = new DateTime(2025, 3, 27);
@@ -32,9 +32,10 @@ namespace HW2
         }
         List<CommandData> _commands = new();
 
-        public UpdateHandler(IUserService userService)
+        public UpdateHandler(IUserService userService, IToDoService toDoService)
         {
             _userService = userService;
+            _toDoService = toDoService;
 
             _commands.Add(new CommandData("/start", 
                                           StartCommand, 
@@ -306,9 +307,13 @@ namespace HW2
                 return;
             }
 
-            _toDoService.SetMaxLength(toDoUser.UserId, length);
+            var toDoService = (ToDoService)_toDoService;
+            if (toDoService != null)
+            {
+                toDoService.SetMaxLength(toDoUser.UserId, length);
 
-            botClient.SendMessage(botMessage.Chat, $"Установлена максимальная длина задачи: {length}.");
+                botClient.SendMessage(botMessage.Chat, $"Установлена максимальная длина задачи: {length}.");
+            }
         }
         private void UserItemsSetMaxNumberCommand(ITelegramBotClient botClient, Message botMessage)
         {
@@ -347,9 +352,13 @@ namespace HW2
                 return;
             }
 
-            _toDoService.SetMaxNumber(toDoUser.UserId, number);
+            var toDoService = (ToDoService)_toDoService;
+            if (toDoService != null)
+            {
+                toDoService.SetMaxNumber(toDoUser.UserId, number);
 
-            botClient.SendMessage(botMessage.Chat, $"Установлено максимально допустимое количество задач: {number}.");
+                botClient.SendMessage(botMessage.Chat, $"Установлено максимально допустимое количество задач: {number}.");
+            }
         }
         private void UserItemsShowActiveCommand(ITelegramBotClient botClient, Message botMessage)
         {
