@@ -9,6 +9,7 @@
     public class ToDoItem
     {
         public Guid Id { get; init; }
+        public ToDoUser User { get; set; }
         public string Name { get; init; }
         public DateTime CreatedAt { get; init; }
         public ToDoItemState State { get; private set; }
