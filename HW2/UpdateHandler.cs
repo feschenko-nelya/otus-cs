@@ -8,7 +8,7 @@ namespace HW2
 {
     internal class UpdateHandler : IUpdateHandler
     {
-        private UserService _userService;
+        private IUserService _userService;
         private ToDoService _toDoService = new ToDoService();
 
         private static readonly Version _version = new Version(1, 0);
@@ -32,7 +32,7 @@ namespace HW2
         }
         List<CommandData> _commands = new();
 
-        public UpdateHandler(UserService userService)
+        public UpdateHandler(IUserService userService)
         {
             _userService = userService;
 
@@ -146,20 +146,8 @@ namespace HW2
 
         private void EndCommand(ITelegramBotClient botClient, Message botMessage)
         {
-            ToDoUser? user = _userService.GetUser(botMessage.From.Id);
-
             StringBuilder str = new();
-            str.Append("До свидания");
-
-            if (user != null)
-            {
-                str.Append($", {user.TelegramUserName}.");
-                _userService.UnregisterUser(user.TelegramUserId);
-            }
-            else
-            {
-                str.Append(".");
-            }
+            str.Append("Команда окончания, которая ничего не делает.");
 
             botClient.SendMessage(botMessage.Chat, str.ToString());
         }
