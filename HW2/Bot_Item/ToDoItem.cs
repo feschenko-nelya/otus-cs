@@ -28,7 +28,7 @@
             State = ToDoItemState.Completed;
             StateChangedAt = DateTime.Now;
         }
-        public string toString()
+        public string ToString()
         {
             return $"{Name} - {CreatedAt.ToString("dd.MM.yyyy HH:mm:ss")} - {Id}";
         }

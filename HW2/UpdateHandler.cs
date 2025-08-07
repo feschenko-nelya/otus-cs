@@ -387,7 +387,7 @@ namespace HW2
                 ToDoItem item = userCommands.ElementAt(i);
                 if (item != null)
                 {
-                    str.AppendLine($"{i + 1}. {item.toString()}");
+                    str.AppendLine($"{i + 1}. {item.ToString()}");
                 }
             }
 
@@ -446,7 +446,7 @@ namespace HW2
                 ToDoItem item = userCommands.ElementAt(i);
                 if (item != null)
                 {
-                    str.AppendLine($" ({item.GetStateName()}) {item.toString()}");
+                    str.AppendLine($" ({item.GetStateName()}) {item.ToString()}");
                 }
             }
 
