@@ -8,8 +8,8 @@ namespace HW2
 {
     internal class UpdateHandler : IUpdateHandler
     {
-        private IUserService _userService;
-        private IToDoService _toDoService;
+        private readonly IUserService _userService;
+        private readonly IToDoService _toDoService;
 
         private static readonly Version _version = new Version(1, 0);
         private static readonly DateTime _creationDate = new DateTime(2025, 3, 27);
