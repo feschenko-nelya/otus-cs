@@ -15,7 +15,7 @@ namespace HW2
         private static readonly Version _version = new Version(1, 0);
         private static readonly DateTime _creationDate = new DateTime(2025, 3, 27);
 
-        delegate void CommandExecutionHandler(ITelegramBotClient botClient, Message botMessage, CancellationToken ct);
+        delegate Task CommandExecutionHandler(ITelegramBotClient botClient, Message botMessage, CancellationToken ct);
         struct CommandData
         {
             public string code;
@@ -140,7 +140,7 @@ namespace HW2
             OnHandleUpdateCompleted.Invoke(botMessage.Text);
         }
 
-        private void StartCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
+        private async Task StartCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             string userName = "_";
             if (botMessage.From.Username != null)
@@ -152,28 +152,32 @@ namespace HW2
 
             if (toDoUser == null)
             {
-                botClient.SendMessage(botMessage.Chat, $"Здравствуйте, {userName}. Вы не зарегистрированы.", ct);
+                await botClient.SendMessage(botMessage.Chat, $"Здравствуйте, {userName}. Вы не зарегистрированы.", ct);
             }
             else
             {
-                botClient.SendMessage(botMessage.Chat, $"{toDoUser.TelegramUserName}, Вы зарегистрированы.", ct);
+                await botClient.SendMessage(botMessage.Chat, $"{toDoUser.TelegramUserName}, Вы зарегистрированы.", ct);
             }
         }
 
-        private void InfoCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
+        private async Task InfoCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
-            botClient.SendMessage(botMessage.Chat, $"Version: {_version.ToString()}", ct);
-            botClient.SendMessage(botMessage.Chat, $"Creation date: {_creationDate.ToString("dd.MM.yyyy")}", ct);
+            await botClient.SendMessage(botMessage.Chat, 
+                $"""
+                    Version: {_version.ToString()}", ct);
+                    Creation date: {_creationDate.ToString("dd.MM.yyyy")}
+                """, 
+                ct);
         }
 
-        private void EndCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
+        private async Task EndCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             StringBuilder str = new();
             str.Append("Команда окончания, которая ничего не делает.");
 
-            botClient.SendMessage(botMessage.Chat, str.ToString(), ct);
+            await botClient.SendMessage(botMessage.Chat, str.ToString(), ct);
         }
-        private void HelpCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
+        private async Task HelpCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             StringBuilder str = new();
             str.AppendLine("Краткая информация о программе:");
@@ -191,16 +195,16 @@ namespace HW2
                 str.AppendLine(command.help);
             }
 
-            botClient.SendMessage(botMessage.Chat, str.ToString(), ct);
+            await botClient.SendMessage(botMessage.Chat, str.ToString(), ct);
         }
-        private void UserItemsAddCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
+        private async Task UserItemsAddCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             string errorMessage;
             ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
 
             if (toDoUser == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage, ct);
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage, ct);
 
                 return;
             }
@@ -209,7 +213,7 @@ namespace HW2
 
             if (args.Count == 0)
             {
-                botClient.SendMessage(botMessage.Chat, "Введите название задачи.", ct);
+                await botClient.SendMessage(botMessage.Chat, "Введите название задачи.", ct);
                 return;
             }
 
@@ -218,21 +222,21 @@ namespace HW2
             ToDoItem? newItem = _toDoService.Add(toDoUser.UserId, string.Join(" ", args));
             if (newItem != null)
             {
-                botClient.SendMessage(botMessage.Chat, $"Задача '{newItem.Name}' добавлена.", ct);
+                await botClient.SendMessage(botMessage.Chat, $"Задача '{newItem.Name}' добавлена.", ct);
             }
             else
             {
-                botClient.SendMessage(botMessage.Chat, "Задача не добавлена.", ct);
+                await botClient.SendMessage(botMessage.Chat, "Задача не добавлена.", ct);
             }
         }
-        private void UserItemsCompleteCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
+        private async Task UserItemsCompleteCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             string errorMessage;
             ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
 
             if (toDoUser == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage, ct);
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage, ct);
 
                 return;
             }
@@ -240,34 +244,34 @@ namespace HW2
             List<string> args = GetArguments(botMessage.Text);
             if (args.Count == 0)
             {
-                botClient.SendMessage(botMessage.Chat, "Введите Guid команды, которую нужно удалить.", ct);
+                await botClient.SendMessage(botMessage.Chat, "Введите Guid команды, которую нужно удалить.", ct);
                 return;
             }
 
             Guid guid;
             if (!Guid.TryParse(args.ElementAt(0), out guid))
             {
-                botClient.SendMessage(botMessage.Chat, "Guid команды неверный.", ct);
+                await botClient.SendMessage(botMessage.Chat, "Guid команды неверный.", ct);
                 return;
             }
 
             if (_toDoService.MarkCompleted(toDoUser.UserId, guid))
             {
-                botClient.SendMessage(botMessage.Chat, "Команда отмечена как выполненная.", ct);
+                await botClient.SendMessage(botMessage.Chat, "Команда отмечена как выполненная.", ct);
             }
             else
             {
-                botClient.SendMessage(botMessage.Chat, "Команда не отмечена как выполненная.", ct);
+                await botClient.SendMessage(botMessage.Chat, "Команда не отмечена как выполненная.", ct);
             }
         }
-        private void UserItemsRemoveCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
+        private async Task UserItemsRemoveCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             string errorMessage;
             ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
 
             if (toDoUser == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage, ct);
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage, ct);
 
                 return;
             }
@@ -275,34 +279,34 @@ namespace HW2
             List<string> args = GetArguments(botMessage.Text);
             if (args.Count == 0)
             {
-                botClient.SendMessage(botMessage.Chat, "Введите Guid команды, которую нужно удалить.", ct);
+                await botClient.SendMessage(botMessage.Chat, "Введите Guid команды, которую нужно удалить.", ct);
                 return;
             }
 
             Guid guid;
             if (!Guid.TryParse(args.ElementAt(0), out guid))
             {
-                botClient.SendMessage(botMessage.Chat, "Guid команды неверный.", ct);
+                await botClient.SendMessage(botMessage.Chat, "Guid команды неверный.", ct);
                 return;
             }
 
             if (_toDoService.Delete(toDoUser.UserId, guid))
             {
-                botClient.SendMessage(botMessage.Chat, "Команда удалена.", ct);
+                await botClient.SendMessage(botMessage.Chat, "Команда удалена.", ct);
             }
             else
             {
-                botClient.SendMessage(botMessage.Chat, "Команда не удалена.", ct);
+                await botClient.SendMessage(botMessage.Chat, "Команда не удалена.", ct);
             }
         }
-        private void UserItemsSetMaxLengthCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
+        private async Task UserItemsSetMaxLengthCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             string errorMessage;
             ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
 
             if (toDoUser == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage, ct);
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage, ct);
 
                 return;
             }
@@ -311,20 +315,20 @@ namespace HW2
             List<string> args = GetArguments(botMessage.Text);
             if (args.Count == 0)
             {
-                botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).", ct);
+                await botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).", ct);
                 return;
             }
 
             short length = -1;
             if (!short.TryParse(args.ElementAt(0), out length))
             {
-                botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).", ct);
+                await botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).", ct);
                 return;
             }
 
             if (length < minLength)
             {
-                botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).", ct);
+                await botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).", ct);
                 return;
             }
 
@@ -333,17 +337,17 @@ namespace HW2
             {
                 toDoService.SetMaxLength(toDoUser.UserId, length);
 
-                botClient.SendMessage(botMessage.Chat, $"Установлена максимальная длина задачи: {length}.", ct);
+                await botClient.SendMessage(botMessage.Chat, $"Установлена максимальная длина задачи: {length}.", ct);
             }
         }
-        private void UserItemsSetMaxNumberCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
+        private async Task UserItemsSetMaxNumberCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             string errorMessage;
             ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
 
             if (toDoUser == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage, ct);
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage, ct);
 
                 return;
             }
@@ -354,22 +358,22 @@ namespace HW2
             List<string> args = GetArguments(botMessage.Text);
             if (args.Count == 0)
             {
-                botClient.SendMessage(botMessage.Chat,
-                                      $"Введите максимально допустимое количество задач в пределе [{minNumber}, {maxNumber}].", ct);
+                await botClient.SendMessage(botMessage.Chat,
+                                            $"Введите максимально допустимое количество задач в пределе [{minNumber}, {maxNumber}].", ct);
                 return;
             }
 
             short number = -1;
             if (!short.TryParse(args.ElementAt(0), out number))
             {
-                botClient.SendMessage(botMessage.Chat,
-                                      $"Введите максимально допустимое количество задач в пределе [{minNumber}, {maxNumber}].", ct);
+                await botClient.SendMessage(botMessage.Chat,
+                                            $"Введите максимально допустимое количество задач в пределе [{minNumber}, {maxNumber}].", ct);
                 return;
             }
 
             if (number < minNumber || number > maxNumber)
             {
-                botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимое количество задач в пределе [{minNumber}, {maxNumber}].", ct);
+                await botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимое количество задач в пределе [{minNumber}, {maxNumber}].", ct);
                 return;
             }
 
@@ -378,17 +382,17 @@ namespace HW2
             {
                 toDoService.SetMaxNumber(toDoUser.UserId, number);
 
-                botClient.SendMessage(botMessage.Chat, $"Установлено максимально допустимое количество задач: {number}.", ct);
+                await botClient.SendMessage(botMessage.Chat, $"Установлено максимально допустимое количество задач: {number}.", ct);
             }
         }
-        private void UserItemsShowActiveCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
+        private async Task UserItemsShowActiveCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             string errorMessage;
             ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
 
             if (toDoUser == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage, ct);
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage, ct);
 
                 return;
             }
@@ -397,7 +401,7 @@ namespace HW2
 
             if (userCommands.Count == 0)
             {
-                botClient.SendMessage(botMessage.Chat, "Список задач пуст.", ct);
+                await botClient.SendMessage(botMessage.Chat, "Список задач пуст.", ct);
 
                 return;
             }
@@ -412,7 +416,7 @@ namespace HW2
                 }
             }
 
-            botClient.SendMessage(botMessage.Chat, str.ToString(), ct);
+            await botClient.SendMessage(botMessage.Chat, str.ToString(), ct);
         }
 
         public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken ct)
@@ -442,14 +446,14 @@ namespace HW2
 
             return Task.CompletedTask;
         }
-        private void UserItemsShowAllCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
+        private async Task UserItemsShowAllCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             string errorMessage;
             ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
 
             if (toDoUser == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage, ct);
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage, ct);
 
                 return;
             }
@@ -458,7 +462,7 @@ namespace HW2
 
             if (userCommands.Count == 0)
             {
-                botClient.SendMessage(botMessage.Chat, "Список задач пуст.", ct);
+                await botClient.SendMessage(botMessage.Chat, "Список задач пуст.", ct);
 
                 return;
             }
@@ -473,7 +477,7 @@ namespace HW2
                 }
             }
 
-            botClient.SendMessage(botMessage.Chat, str.ToString(), ct);
+            await botClient.SendMessage(botMessage.Chat, str.ToString(), ct);
         }
 
         private List<string> GetArguments(string line)

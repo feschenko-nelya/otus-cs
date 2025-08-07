@@ -32,12 +32,12 @@ namespace HW2
 
         private static void OnUpdateHandlerStart(string message)
         {
-            Console.WriteLine("Началась обработка сообщения '{message}'");
+            Console.WriteLine($"Началась обработка сообщения '{message}'");
         }
 
         private static void OnUpdateHandlerComplete(string message)
         {
-            Console.WriteLine("Закончилась обработка сообщения '{message}'");
+            Console.WriteLine($"Закончилась обработка сообщения '{message}'");
         }
     }
 }
