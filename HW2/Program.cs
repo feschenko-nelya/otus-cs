@@ -11,10 +11,12 @@ namespace HW2
         {
             UserService userService = new();
             ToDoService toDoService = new();
-
+            
+            using var cts = new CancellationTokenSource();
             var handler = new UpdateHandler(userService, toDoService);
+
             var botClient = new ConsoleBotClient();
-            botClient.StartReceiving(handler);
+            botClient.StartReceiving(handler, cts.Token);
         }
     }
 }
