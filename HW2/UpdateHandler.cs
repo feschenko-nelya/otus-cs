@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using HW2.Item;
 using HW2.User;
 using Otus.ToDoList.ConsoleBot;
@@ -14,15 +15,15 @@ namespace HW2
         private static readonly Version _version = new Version(1, 0);
         private static readonly DateTime _creationDate = new DateTime(2025, 3, 27);
 
-        delegate void dlgtDoCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct);
+        delegate void CommandExecutionHandler(ITelegramBotClient botClient, Message botMessage, CancellationToken ct);
         struct CommandData
         {
             public string code;
-            public dlgtDoCommand execute;
+            public CommandExecutionHandler execute;
             public string help;
             public bool isUsers = false;
 
-            public CommandData(string code, dlgtDoCommand command, string help, bool isUsers = false)
+            public CommandData(string code, CommandExecutionHandler command, string help, bool isUsers = false)
             {
                 this.code = code;
                 this.help = help;
@@ -31,6 +32,10 @@ namespace HW2
             }
         }
         List<CommandData> _commands = new();
+
+        public delegate void MessageEventHandler(string message);
+        event MessageEventHandler OnHandleUpdateStarted = delegate { };
+        event MessageEventHandler OnHandleUpdateCompleted = delegate { };
 
         public UpdateHandler(IUserService userService, IToDoService toDoService)
         {
@@ -81,14 +86,17 @@ namespace HW2
                                           true));
         }
 
-        public void HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken ct)
+        public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
             Message botMessage = update.Message;
+
+            OnHandleUpdateStarted.Invoke(botMessage.Text);
 
             try
             {
                 if (string.IsNullOrEmpty(botMessage.Text))
                 {
+                    OnHandleUpdateCompleted.Invoke(botMessage.Text);
                     return;
                 }
 
@@ -97,26 +105,39 @@ namespace HW2
 
                 if (command.Equals(default(CommandData)))
                 {
-                    botClient.SendMessage(botMessage.Chat, $"Команда '{args[0]}' не поддерживается. Введите другую.", ct);
+                    await botClient.SendMessage(botMessage.Chat, $"Команда '{args[0]}' не поддерживается. Введите другую.", ct);
+                    
+                    OnHandleUpdateCompleted.Invoke(botMessage.Text);
+                    
                     return;
                 }
 
                 if (command.code.Length == 0)
                 {
-                    throw new Exception("Отсутствует объект команды: " + args[0]);
+                    await HandleErrorAsync(botClient, new Exception("Отсутствует объект команды: " + args[0]), ct);
+
+                    OnHandleUpdateCompleted.Invoke(botMessage.Text);
+
+                    return;
                 }
 
                 if (command.isUsers && !IsEnabled(botMessage.From.Id))
                 {
-                    throw new Exception($"Команда '{command.code}' недоступна.");
+                    await HandleErrorAsync(botClient, new Exception($"Команда '{command.code}' недоступна."), ct);
+
+                    OnHandleUpdateCompleted.Invoke(botMessage.Text);
+
+                    return;
                 }
 
                 command.execute(botClient, botMessage, ct);
             }
             catch (Exception exception)
             {
-                ProcessException(botClient, botMessage.Chat, exception, ct);
+                await HandleErrorAsync(botClient, exception, ct);
             }
+
+            OnHandleUpdateCompleted.Invoke(botMessage.Text);
         }
 
         private void StartCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
@@ -396,7 +417,6 @@ namespace HW2
 
         public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken ct)
         {
-            botClient.
             if ((exception.GetType() == typeof(ArgumentException))
                 || (exception.GetType() == typeof(TaskCountLimitException))
                 || (exception.GetType() == typeof(TaskLengthLimitException))
@@ -499,6 +519,27 @@ namespace HW2
             }
 
             return (_userService.GetUser(telegramUserId) != null);
+        }
+
+        public void OnStartedSubscribe(MessageEventHandler handler)
+        {
+            OnHandleUpdateStarted += handler;
+        }
+        public void OnCompletedSubscribe(MessageEventHandler handler)
+        {
+            OnHandleUpdateCompleted += handler;
+        }
+        public void UnsubscribeAll()
+        {
+            foreach (MessageEventHandler d in OnHandleUpdateStarted.GetInvocationList())
+            {
+                OnHandleUpdateStarted -= d;
+            }
+
+            foreach (MessageEventHandler d in OnHandleUpdateCompleted.GetInvocationList())
+            {
+                OnHandleUpdateCompleted -= d;
+            }
         }
     }
 }
