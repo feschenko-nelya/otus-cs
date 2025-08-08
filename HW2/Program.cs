@@ -1,4 +1,5 @@
 ﻿
+using HW2.Bot_Item;
 using HW2.Bot_User;
 using HW2.Item;
 using HW2.User;
@@ -12,7 +13,9 @@ namespace HW2
         {
             IUserRepository usersRepository = new InMemoryUserRepository();
             UserService userService = new(usersRepository);
-            ToDoService toDoService = new();
+
+            IToDoRepository toDoRepository = new InMemoryToDoRepository();
+            ToDoService toDoService = new(toDoRepository);
 
             var handler = new UpdateHandler(userService, toDoService);
             var botClient = new ConsoleBotClient();

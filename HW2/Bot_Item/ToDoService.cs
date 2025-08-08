@@ -1,11 +1,12 @@
 ﻿
+using HW2.Bot_Item;
 using HW2.User;
 
 namespace HW2.Item
 {
     public class ToDoService : IToDoService
     {
-        private readonly Dictionary<Guid, List<ToDoItem>> _usersItems = new();
+        private readonly IToDoRepository _toDoRepository;
 
         private struct ItemLimit
         {
@@ -19,50 +20,24 @@ namespace HW2.Item
             }
         }
         private Dictionary<Guid, ItemLimit> _usersLimits = new();
+
+        public ToDoService(IToDoRepository toDoRepository)
+        {
+            _toDoRepository = toDoRepository;
+        }
         public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
         {
-            List<ToDoItem>? userItems = _usersItems.GetValueOrDefault(userId);
-
-            if (userItems == null)
-            {
-                return [];
-            }
-
-            List<ToDoItem> activeItems = new();
-
-            foreach (ToDoItem item in userItems)
-            {
-                if (item.State == ToDoItemState.Active)
-                {
-                    activeItems.Add(item);
-                }
-            }
-
-            return activeItems;
+            return _toDoRepository.GetActiveByUserId(userId);
         }
 
         public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
         {
-            List<ToDoItem>? items = _usersItems.GetValueOrDefault(userId);
-
-            if (items == null)
-            {
-                return [];
-            }
-
-            return items;
+            return _toDoRepository.GetAllByUserId(userId);
         }
 
         public bool MarkCompleted(Guid userId, Guid itemId)
         {
-            List<ToDoItem>? userItems = _usersItems.GetValueOrDefault(userId);
-
-            if (userItems == null)
-            {
-                return false;
-            }
-
-            ToDoItem? item = GetItemByGuid(userItems, itemId);
+            ToDoItem? item = _toDoRepository.Get(itemId);
 
             if (item == null)
             {
@@ -76,17 +51,10 @@ namespace HW2.Item
 
         public ToDoItem Add(Guid userId, string name)
         {
-            List<ToDoItem>? userItems = _usersItems.GetValueOrDefault(userId);
-
-            if (userItems == null)
-            {
-                userItems = new();
-                _usersItems.Add(userId, userItems);
-            }
-
             ItemLimit userItemLimit = GetUserItemLimit(userId);
 
-            if (userItems.Count == userItemLimit.Number)
+            
+            if (_toDoRepository.GetAllByUserId(userId).Count == userItemLimit.Number)
             {
                 throw new TaskCountLimitException(userItemLimit.Number);
             }
@@ -96,34 +64,24 @@ namespace HW2.Item
                 throw new TaskLengthLimitException(name.Length, userItemLimit.Length);
             }
 
-            if (HasItemDuplicate(userItems, name))
+            if (_toDoRepository.ExistsByName(userId, name))
             {
                 throw new DuplicateTaskException(name);
             }
 
             var newItem = new ToDoItem(name);
-            userItems.Add(newItem);
+            newItem.UserId = userId;
+
+            _toDoRepository.Add(newItem);
 
             return newItem;
         }
 
         public bool Delete(Guid userId, Guid itemId)
         {
-            List<ToDoItem>? userItems = _usersItems.GetValueOrDefault(userId);
-
-            if (userItems == null)
-            {
-                return false;
-            }
-
-            ToDoItem? item = GetItemByGuid(userItems, itemId);
-
-            if (item == null)
-            {
-                return false;
-            }
-
-            return userItems.Remove(item);
+            _toDoRepository.Delete(itemId);
+            
+            return true;
         }
         public void SetMaxNumber(Guid userId, short maxNumber)
         {
@@ -170,32 +128,6 @@ namespace HW2.Item
             }
 
             return userItemLimit;
-        }
-
-        private ToDoItem? GetItemByGuid(List<ToDoItem> userItems, Guid id)
-        {
-            foreach (ToDoItem item in userItems)
-            {
-                if (item.Id.Equals(id))
-                {
-                    return item;
-                }
-            }
-
-            return null;
-        }
-
-        public bool HasItemDuplicate(List<ToDoItem> userItems, string name)
-        {
-            foreach (var item in userItems)
-            {
-                if (item.Name == name)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
     }
 }
