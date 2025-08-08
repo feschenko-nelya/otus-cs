@@ -4,7 +4,7 @@ namespace HW2.Bot_User
 {
     internal class InMemoryUserRepository : IUserRepository
     {
-        private List<ToDoUser> _toDoUsers = new();
+        private readonly List<ToDoUser> _toDoUsers = new();
         public void Add(ToDoUser user)
         {
             if (GetUser(user.UserId) != null)

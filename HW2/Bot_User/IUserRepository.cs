@@ -3,7 +3,7 @@ using HW2.User;
 
 namespace HW2.Bot_User
 {
-    internal interface IUserRepository
+    public interface IUserRepository
     {
         ToDoUser? GetUser(Guid userId);
         ToDoUser? GetUserByTelegramUserId(long telegramUserId);
