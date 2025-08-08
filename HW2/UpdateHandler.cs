@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using HW2.Bot_Item;
 using HW2.Item;
 using HW2.User;
 using Otus.ToDoList.ConsoleBot;
@@ -78,6 +79,10 @@ namespace HW2
             _commands.Add(new CommandData("/tasksmaxnumber", 
                                           UserItemsSetMaxNumberCommand, 
                                           "Максимально допустимое количество задач.", 
+                                          true));
+            _commands.Add(new CommandData("/report",
+                                          UserItemsReportCommand,
+                                          "Отчет по задачам.",
                                           true));
         }
 
@@ -451,6 +456,30 @@ namespace HW2
             }
 
             botClient.SendMessage(botMessage.Chat, str.ToString());
+        }
+        private void UserItemsReportCommand(ITelegramBotClient botClient, Message botMessage)
+        {
+            ToDoService? toDoService = (ToDoService)_toDoService;
+
+            if (toDoService == null)
+            {
+                return;
+            }
+
+            ToDoUser? user = _userService.GetUser(botMessage.From.Id);
+
+            if (user == null)
+            {
+                return;
+            }
+
+            ToDoReportService report = new(toDoService.ToDoRepository);
+            
+            var reportResult = report.GetUserStats(user.UserId);
+
+            botClient.SendMessage(botMessage.Chat, 
+                                  $"Статистика по задачам на {reportResult.generatedAt.ToString("dd.MM.yyyy HH:mm:ss")}. " +
+                                  $"Всего: {reportResult.total}; Завершенных: {reportResult.completed}; Активных: {reportResult.active};");
         }
 
         private static void ShowException(ITelegramBotClient botClient, Chat botChat, string message)

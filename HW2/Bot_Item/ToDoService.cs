@@ -6,7 +6,7 @@ namespace HW2.Item
 {
     public class ToDoService : IToDoService
     {
-        private readonly IToDoRepository _toDoRepository;
+        public readonly IToDoRepository ToDoRepository;
 
         private struct ItemLimit
         {
@@ -23,21 +23,21 @@ namespace HW2.Item
 
         public ToDoService(IToDoRepository toDoRepository)
         {
-            _toDoRepository = toDoRepository;
+            ToDoRepository = toDoRepository;
         }
         public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
         {
-            return _toDoRepository.GetActiveByUserId(userId);
+            return ToDoRepository.GetActiveByUserId(userId);
         }
 
         public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
         {
-            return _toDoRepository.GetAllByUserId(userId);
+            return ToDoRepository.GetAllByUserId(userId);
         }
 
         public bool MarkCompleted(Guid userId, Guid itemId)
         {
-            ToDoItem? item = _toDoRepository.Get(itemId);
+            ToDoItem? item = ToDoRepository.Get(itemId);
 
             if (item == null)
             {
@@ -54,7 +54,7 @@ namespace HW2.Item
             ItemLimit userItemLimit = GetUserItemLimit(userId);
 
             
-            if (_toDoRepository.GetAllByUserId(userId).Count == userItemLimit.Number)
+            if (ToDoRepository.GetAllByUserId(userId).Count == userItemLimit.Number)
             {
                 throw new TaskCountLimitException(userItemLimit.Number);
             }
@@ -64,7 +64,7 @@ namespace HW2.Item
                 throw new TaskLengthLimitException(name.Length, userItemLimit.Length);
             }
 
-            if (_toDoRepository.ExistsByName(userId, name))
+            if (ToDoRepository.ExistsByName(userId, name))
             {
                 throw new DuplicateTaskException(name);
             }
@@ -72,14 +72,14 @@ namespace HW2.Item
             var newItem = new ToDoItem(name);
             newItem.UserId = userId;
 
-            _toDoRepository.Add(newItem);
+            ToDoRepository.Add(newItem);
 
             return newItem;
         }
 
         public bool Delete(Guid userId, Guid itemId)
         {
-            _toDoRepository.Delete(itemId);
+            ToDoRepository.Delete(itemId);
             
             return true;
         }
