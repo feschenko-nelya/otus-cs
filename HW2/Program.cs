@@ -19,7 +19,7 @@ namespace HW2
             IToDoRepository toDoRepository = new InMemoryToDoRepository();
             ToDoService toDoService = new(toDoRepository);
 
-            var handler = new UpdateHandler(userService, toDoService, cts);
+            var handler = new UpdateHandler(userService, toDoService);
 
             try
             {

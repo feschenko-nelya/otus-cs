@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using HW2.Bot_Item;
 using HW2.Item;
 using HW2.User;
 using Otus.ToDoList.ConsoleBot;
@@ -469,7 +470,7 @@ namespace HW2
 
             await botClient.SendMessage(botMessage.Chat, GetToDoItemsStringList(userCommands), ct);
         }
-        private async Task UserItemsReportCommand(ITelegramBotClient botClient, Message botMessage, , CancellationToken ct)
+        private async Task UserItemsReportCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             ToDoService? toDoService = (ToDoService)_toDoService;
 
@@ -494,7 +495,7 @@ namespace HW2
                                         $"Всего: {reportResult.total}; Завершенных: {reportResult.completed}; Активных: {reportResult.active};",
                                         ct);
         }
-        public async Task UserItemsFindCommand(ITelegramBotClient botClient, Message botMessage, CancelationToken ct)
+        public async Task UserItemsFindCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             string errorMessage;
             ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
@@ -510,10 +511,6 @@ namespace HW2
             var userCommands = _toDoService.Find(toDoUser, string.Join(" ", commandArgs));
 
             botClient.SendMessage(botMessage.Chat, GetToDoItemsStringList(userCommands), ct);
-        }
-        private static void ShowException(ITelegramBotClient botClient, Chat botChat, string message)
-        {
-            botClient.SendMessage(botChat, message);
         }
         private List<string> GetCommandArguments(string line)
         {
