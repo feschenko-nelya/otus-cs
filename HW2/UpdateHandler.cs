@@ -84,6 +84,14 @@ namespace HW2
                                           UserItemsSetMaxNumberCommand, 
                                           "Максимально допустимое количество задач.", 
                                           true));
+            _commands.Add(new CommandData("/report",
+                                          UserItemsReportCommand,
+                                          "Отчет по задачам.",
+                                          true));
+            _commands.Add(new CommandData("/find",
+                                          UserItemsFindCommand,
+                                          "Все задачи пользователя, которые начинаются на введенный текст.",
+                                          true));
         }
 
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken ct)
@@ -209,7 +217,7 @@ namespace HW2
                 return;
             }
 
-            List<string> args = GetArguments(botMessage.Text);
+            List<string> args = GetCommandArguments(botMessage.Text);
 
             if (args.Count == 0)
             {
@@ -241,7 +249,7 @@ namespace HW2
                 return;
             }
 
-            List<string> args = GetArguments(botMessage.Text);
+            List<string> args = GetCommandArguments(botMessage.Text);
             if (args.Count == 0)
             {
                 await botClient.SendMessage(botMessage.Chat, "Введите Guid команды, которую нужно удалить.", ct);
@@ -276,7 +284,7 @@ namespace HW2
                 return;
             }
 
-            List<string> args = GetArguments(botMessage.Text);
+            List<string> args = GetCommandArguments(botMessage.Text);
             if (args.Count == 0)
             {
                 await botClient.SendMessage(botMessage.Chat, "Введите Guid команды, которую нужно удалить.", ct);
@@ -312,7 +320,7 @@ namespace HW2
             }
 
             int minLength = 50;
-            List<string> args = GetArguments(botMessage.Text);
+            List<string> args = GetCommandArguments(botMessage.Text);
             if (args.Count == 0)
             {
                 await botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).", ct);
@@ -355,7 +363,7 @@ namespace HW2
             int minNumber = 1;
             int maxNumber = 100;
 
-            List<string> args = GetArguments(botMessage.Text);
+            List<string> args = GetCommandArguments(botMessage.Text);
             if (args.Count == 0)
             {
                 await botClient.SendMessage(botMessage.Chat,
@@ -418,7 +426,6 @@ namespace HW2
 
             await botClient.SendMessage(botMessage.Chat, str.ToString(), ct);
         }
-
         public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken ct)
         {
             if ((exception.GetType() == typeof(ArgumentException))
@@ -460,27 +467,55 @@ namespace HW2
 
             var userCommands = _toDoService.GetAllByUserId(toDoUser.UserId);
 
-            if (userCommands.Count == 0)
+            await botClient.SendMessage(botMessage.Chat, GetToDoItemsStringList(userCommands), ct);
+        }
+        private async Task UserItemsReportCommand(ITelegramBotClient botClient, Message botMessage, , CancellationToken ct)
+        {
+            ToDoService? toDoService = (ToDoService)_toDoService;
+
+            if (toDoService == null)
             {
-                await botClient.SendMessage(botMessage.Chat, "Список задач пуст.", ct);
+                return;
+            }
+
+            ToDoUser? user = _userService.GetUser(botMessage.From.Id);
+
+            if (user == null)
+            {
+                return;
+            }
+
+            ToDoReportService report = new(toDoService.ToDoRepository);
+            
+            var reportResult = report.GetUserStats(user.UserId);
+
+            await botClient.SendMessage(botMessage.Chat, 
+                                        $"Статистика по задачам на {reportResult.generatedAt.ToString("dd.MM.yyyy HH:mm:ss")}. " +
+                                        $"Всего: {reportResult.total}; Завершенных: {reportResult.completed}; Активных: {reportResult.active};",
+                                        ct);
+        }
+        public async Task UserItemsFindCommand(ITelegramBotClient botClient, Message botMessage, CancelationToken ct)
+        {
+            string errorMessage;
+            ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
+
+            if (toDoUser == null)
+            {
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage, ct);
 
                 return;
             }
 
-            StringBuilder str = new();
-            for (int i = 0; i < userCommands.Count; ++i)
-            {
-                ToDoItem item = userCommands.ElementAt(i);
-                if (item != null)
-                {
-                    str.AppendLine($" ({item.GetStateName()}) {item.ToString()}");
-                }
-            }
+            List<string> commandArgs = GetCommandArguments(botMessage.Text);
+            var userCommands = _toDoService.Find(toDoUser, string.Join(" ", commandArgs));
 
-            await botClient.SendMessage(botMessage.Chat, str.ToString(), ct);
+            botClient.SendMessage(botMessage.Chat, GetToDoItemsStringList(userCommands), ct);
         }
-
-        private List<string> GetArguments(string line)
+        private static void ShowException(ITelegramBotClient botClient, Chat botChat, string message)
+        {
+            botClient.SendMessage(botChat, message);
+        }
+        private List<string> GetCommandArguments(string line)
         {
             List<string> argsList = new();
 
@@ -524,7 +559,6 @@ namespace HW2
 
             return (_userService.GetUser(telegramUserId) != null);
         }
-
         public void OnStartedSubscribe(MessageEventHandler handler)
         {
             OnHandleUpdateStarted += handler;
@@ -544,6 +578,28 @@ namespace HW2
             {
                 OnHandleUpdateCompleted -= d;
             }
+        }
+        private string GetToDoItemsStringList(IReadOnlyList<ToDoItem> items)
+        {
+            StringBuilder str = new();
+
+            if (items.Count == 0)
+            {
+                str.Append("Список задач пуст.");
+            }
+            else
+            {
+                for (int i = 0; i < items.Count; ++i)
+                {
+                    ToDoItem item = items.ElementAt(i);
+                    if (item != null)
+                    {
+                        str.AppendLine($" ({item.GetStateName()}) {item.ToString()}");
+                    }
+                }
+            }
+
+            return str.ToString();
         }
     }
 }

@@ -9,7 +9,7 @@
     public class ToDoItem
     {
         public Guid Id { get; init; }
-        public ToDoUser User { get; set; }
+        public Guid UserId { get; set; }
         public string Name { get; init; }
         public DateTime CreatedAt { get; init; }
         public ToDoItemState State { get; private set; }
@@ -28,7 +28,7 @@
             State = ToDoItemState.Completed;
             StateChangedAt = DateTime.Now;
         }
-        public string ToString()
+        public override string ToString()
         {
             return $"{Name} - {CreatedAt.ToString("dd.MM.yyyy HH:mm:ss")} - {Id}";
         }
