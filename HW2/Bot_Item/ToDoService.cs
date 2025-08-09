@@ -1,4 +1,5 @@
 ﻿
+using System.Reflection.Metadata.Ecma335;
 using HW2.Bot_Item;
 using HW2.User;
 
@@ -33,6 +34,12 @@ namespace HW2.Item
         public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
         {
             return ToDoRepository.GetAllByUserId(userId);
+        }
+        public IReadOnlyList<ToDoItem> Find(ToDoUser user, string namePrefix)
+        {
+            Func<ToDoItem, bool> predicate = (item) => item.Name.StartsWith(namePrefix);
+
+            return ToDoRepository.Find(user.UserId, predicate);
         }
 
         public bool MarkCompleted(Guid userId, Guid itemId)

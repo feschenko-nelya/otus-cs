@@ -1,4 +1,5 @@
-﻿using HW2.User;
+﻿using System.Collections.Generic;
+using HW2.User;
 
 namespace HW2.Bot_Item
 {
@@ -57,6 +58,21 @@ namespace HW2.Bot_Item
         public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
         {
             return _items.FindAll((item) => (item.UserId == userId));
+        }
+
+        public IReadOnlyList<ToDoItem> Find(Guid userId, Func<ToDoItem, bool> predicate)
+        {
+            List<ToDoItem> resItems = new();
+
+            foreach (ToDoItem item in _items)
+            {
+                if ((item.UserId == userId) && predicate(item))
+                {
+                    resItems.Add(item);
+                }
+            }
+
+            return resItems;
         }
 
         public void Update(ToDoItem item)
