@@ -10,20 +10,20 @@ namespace HW2.User
         {
             _users = usersRepository;
         }
-        public ToDoUser? GetUser(long telegramUserId)
+        public async Task<ToDoUser?> GetUser(long telegramUserId, CancellationToken cancelToken)
         {
-            return _users.GetUserByTelegramUserId(telegramUserId);
+            return await _users.GetUserByTelegramUserId(telegramUserId, cancelToken);
         }
-        public ToDoUser RegisterUser(long telegramUserId, string telegramUserName)
+        public async Task<ToDoUser> RegisterUser(long telegramUserId, string telegramUserName, CancellationToken cancelToken)
         {
-            var user = GetUser(telegramUserId);
+            var user = await GetUser(telegramUserId, cancelToken);
             if (user != null)
             {
                 return user;
             }
 
             user = new ToDoUser(telegramUserId, telegramUserName);
-            _users.Add(user);
+            await _users.Add(user, cancelToken);
 
             return user;
         }

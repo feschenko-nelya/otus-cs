@@ -1,83 +1,173 @@
-﻿using System.Collections.Generic;
-using HW2.User;
+﻿using HW2.User;
+using Otus.ToDoList.ConsoleBot.Types;
 
 namespace HW2.Bot_Item
 {
     internal class InMemoryToDoRepository : IToDoRepository
     {
         private readonly List<ToDoItem> _items = new();
-        public void Add(ToDoItem item)
+        public async Task Add(ToDoItem item, CancellationToken cancelToken)
         {
-            _items.Add(item);
+            await Task.Run(() => _items.Add(item));
         }
 
-        public int CountActive(Guid userId)
+        public async Task<int> CountActive(Guid userId, CancellationToken cancelToken)
         {
-            int count = 0;
-
-            foreach(ToDoItem item in _items)
+            return await Task<int>.Run(() =>
             {
-                if (item.State == ToDoItemState.Active)
-                {
-                    count += 1;
-                }
-            }
+                int count = 0;
 
-            return count;
+                foreach (ToDoItem item in _items)
+                {
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        return 0; ;
+                    }
+
+                    if (item.State == ToDoItemState.Active)
+                    {
+                        count += 1;
+                    }
+                }
+
+                return count;
+            });
         }
 
-        public void Delete(Guid id)
+        public async Task Delete(Guid id, CancellationToken cancelToken)
         {
-            foreach (ToDoItem item in _items)
+            await Task.Run(() =>
             {
-                if (item.Id == id)
+                foreach (ToDoItem item in _items)
                 {
-                    _items.Remove(item);
-                    break;
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    if (item.Id == id)
+                    {
+                        _items.Remove(item);
+                        break;
+                    }
                 }
-            }
+            });
         }
 
-        public bool ExistsByName(Guid userId, string name)
+        public async Task<bool> ExistsByName(Guid userId, string name, CancellationToken cancelToken)
         {
-            ToDoItem? item = _items.Find((item) => (item.UserId == userId) && (item.Name == name));
-
-            return (item != null);
-        }
-
-        public ToDoItem? Get(Guid id)
-        {
-            return _items.Find((item) => (item.Id == id));
-        }
-
-        public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
-        {
-            return _items.FindAll((item) => (item.UserId == userId) && (item.State == ToDoItemState.Active));
-        }
-
-        public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
-        {
-            return _items.FindAll((item) => (item.UserId == userId));
-        }
-
-        public IReadOnlyList<ToDoItem> Find(Guid userId, Func<ToDoItem, bool> predicate)
-        {
-            List<ToDoItem> resItems = new();
-
-            foreach (ToDoItem item in _items)
+            return await Task<bool>.Run(() =>
             {
-                if ((item.UserId == userId) && predicate(item))
+                foreach (ToDoItem item in _items)
                 {
-                    resItems.Add(item);
-                }
-            }
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        return false;
+                    }
 
-            return resItems;
+                    if ((item.UserId == userId) && (item.Name == name))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
         }
 
-        public void Update(ToDoItem item)
+        public async Task<ToDoItem?> Get(Guid id, CancellationToken cancelToken)
         {
-            ToDoItem? ownItem = Get(item.Id);
+            return await Task<ToDoItem?>.Run(() =>
+            {
+                foreach (ToDoItem item in _items)
+                {
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        return null;
+                    }
+
+                    if ((item.Id == id))
+                    {
+                        return item;
+                    }
+                }
+
+                return null;
+            });
+        }
+
+        public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken cancelToken)
+        {
+            return await Task<IReadOnlyList<ToDoItem>>.Run(() =>
+            {
+                List<ToDoItem> resItems = new();
+
+                foreach (ToDoItem item in _items)
+                {
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        return [];
+                    }
+
+                    if ((item.UserId == userId) && (item.State == ToDoItemState.Active))
+                    {
+                        resItems.Add(item);
+                    }
+                }
+
+                return resItems;
+            });
+        }
+
+        public async Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken cancelToken)
+        {
+            return await Task<IReadOnlyList<ToDoItem>>.Run(() =>
+            {
+                List<ToDoItem> resItems = new();
+
+                foreach (ToDoItem item in _items)
+                {
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        return [];
+                    }
+
+                    if (item.UserId == userId)
+                    {
+                        resItems.Add(item);
+                    }
+                }
+
+                return resItems;
+            });
+        }
+
+        public async Task<IReadOnlyList<ToDoItem>> Find(Guid userId, Func<ToDoItem, bool> predicate, CancellationToken cancelToken)
+        {
+            return await Task<IReadOnlyList<ToDoItem>>.Run(() =>
+            {
+                List<ToDoItem> resItems = new();
+
+                foreach (ToDoItem item in _items)
+                {
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        return [];
+                    }
+
+                    if ((item.UserId == userId) && predicate(item))
+                    {
+                        resItems.Add(item);
+                    }
+                }
+
+                return resItems;
+            });
+        }
+
+        public async Task Update(ToDoItem item, CancellationToken cancelToken)
+        {
+            ToDoItem? ownItem = await Get(item.Id, cancelToken);
 
             if (ownItem != null)
             {

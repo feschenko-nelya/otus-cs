@@ -5,40 +5,56 @@ namespace HW2.Bot_User
     internal class InMemoryUserRepository : IUserRepository
     {
         private readonly List<ToDoUser> _toDoUsers = new();
-        public void Add(ToDoUser user)
+        public async Task Add(ToDoUser user, CancellationToken cancelToken)
         {
-            if (GetUser(user.UserId) != null)
-            {
-                return;
-            }
+            ToDoUser? existedUser = await GetUser(user.UserId, cancelToken);
 
-            _toDoUsers.Add(user);
+            if (existedUser == null)
+            {
+                _toDoUsers.Add(user);
+            }
         }
 
-        public ToDoUser? GetUser(Guid userId)
+        public async Task<ToDoUser?> GetUser(Guid userId, CancellationToken cancelToken)
         {
-            foreach (ToDoUser user in _toDoUsers)
-            {
-                if (user.UserId == userId)
-                {
-                    return user;
-                }
-            }
+            return await Task<ToDoUser?>.Run(() =>
+                   {
+                        foreach (ToDoUser user in _toDoUsers)
+                        {
+                           if (cancelToken.IsCancellationRequested)
+                           {
+                               return null;
+                           }
 
-            return null;
+                           if (user.UserId == userId)
+                           {
+                               return user;
+                           }
+                        }
+
+                        return null;
+                   });
         }
 
-        public ToDoUser? GetUserByTelegramUserId(long telegramUserId)
+        public async Task<ToDoUser?> GetUserByTelegramUserId(long telegramUserId, CancellationToken cancelToken)
         {
-            foreach (ToDoUser user in _toDoUsers)
-            {
-                if (user.TelegramUserId == telegramUserId)
+            return await Task<ToDoUser?>.Run(() =>
+            { 
+                foreach (ToDoUser user in _toDoUsers)
                 {
-                    return user;
-                }
-            }
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        return null;
+                    }
 
-            return null;
+                    if (user.TelegramUserId == telegramUserId)
+                    {
+                        return user;
+                    }
+                }
+
+                return null;
+            });
         }
     }
 }
