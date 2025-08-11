@@ -1,23 +1,19 @@
-﻿
+﻿using HW2.Bot_User;
+
 namespace HW2.User
 {
     public class UserService : IUserService
     {
-        private List<ToDoUser> _users = new List<ToDoUser>();
+        private readonly IUserRepository _users;
 
+        public UserService(IUserRepository usersRepository)
+        {
+            _users = usersRepository;
+        }
         public ToDoUser? GetUser(long telegramUserId)
         {
-            foreach (ToDoUser user in _users)
-            {
-                if (user.TelegramUserId == telegramUserId)
-                {
-                    return user;
-                }
-            }
-
-            return null;
+            return _users.GetUserByTelegramUserId(telegramUserId);
         }
-
         public ToDoUser RegisterUser(long telegramUserId, string telegramUserName)
         {
             var user = GetUser(telegramUserId);
@@ -30,17 +26,6 @@ namespace HW2.User
             _users.Add(user);
 
             return user;
-        }
-        public void UnregisterUser(long telegramUserId)
-        {
-            foreach (ToDoUser user in _users)
-            {
-                if (user.TelegramUserId == telegramUserId)
-                {
-                    _users.Remove(user);
-                    break;
-                }
-            }
         }
     }
 }

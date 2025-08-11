@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using HW2.Bot_Item;
 using HW2.Item;
 using HW2.User;
 using Otus.ToDoList.ConsoleBot;
@@ -78,6 +79,14 @@ namespace HW2
             _commands.Add(new CommandData("/tasksmaxnumber", 
                                           UserItemsSetMaxNumberCommand, 
                                           "Максимально допустимое количество задач.", 
+                                          true));
+            _commands.Add(new CommandData("/report",
+                                          UserItemsReportCommand,
+                                          "Отчет по задачам.",
+                                          true));
+            _commands.Add(new CommandData("/find",
+                                          UserItemsFindCommand,
+                                          "Все задачи пользователя, которые начинаются на введенный текст.",
                                           true));
         }
 
@@ -184,7 +193,7 @@ namespace HW2
                 return;
             }
 
-            List<string> args = GetArguments(botMessage.Text);
+            List<string> args = GetCommandArguments(botMessage.Text);
 
             if (args.Count == 0)
             {
@@ -216,7 +225,7 @@ namespace HW2
                 return;
             }
 
-            List<string> args = GetArguments(botMessage.Text);
+            List<string> args = GetCommandArguments(botMessage.Text);
             if (args.Count == 0)
             {
                 botClient.SendMessage(botMessage.Chat, "Введите Guid команды, которую нужно удалить.");
@@ -251,7 +260,7 @@ namespace HW2
                 return;
             }
 
-            List<string> args = GetArguments(botMessage.Text);
+            List<string> args = GetCommandArguments(botMessage.Text);
             if (args.Count == 0)
             {
                 botClient.SendMessage(botMessage.Chat, "Введите Guid команды, которую нужно удалить.");
@@ -287,7 +296,7 @@ namespace HW2
             }
 
             int minLength = 50;
-            List<string> args = GetArguments(botMessage.Text);
+            List<string> args = GetCommandArguments(botMessage.Text);
             if (args.Count == 0)
             {
                 botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).");
@@ -330,7 +339,7 @@ namespace HW2
             int minNumber = 1;
             int maxNumber = 100;
 
-            List<string> args = GetArguments(botMessage.Text);
+            List<string> args = GetCommandArguments(botMessage.Text);
             if (args.Count == 0)
             {
                 botClient.SendMessage(botMessage.Chat,
@@ -433,31 +442,56 @@ namespace HW2
 
             var userCommands = _toDoService.GetAllByUserId(toDoUser.UserId);
 
-            if (userCommands.Count == 0)
+            botClient.SendMessage(botMessage.Chat, GetToDoItemsStringList(userCommands));
+        }
+        private void UserItemsReportCommand(ITelegramBotClient botClient, Message botMessage)
+        {
+            ToDoService? toDoService = (ToDoService)_toDoService;
+
+            if (toDoService == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Список задач пуст.");
+                return;
+            }
+
+            ToDoUser? user = _userService.GetUser(botMessage.From.Id);
+
+            if (user == null)
+            {
+                return;
+            }
+
+            ToDoReportService report = new(toDoService.ToDoRepository);
+            
+            var reportResult = report.GetUserStats(user.UserId);
+
+            botClient.SendMessage(botMessage.Chat, 
+                                  $"Статистика по задачам на {reportResult.generatedAt.ToString("dd.MM.yyyy HH:mm:ss")}. " +
+                                  $"Всего: {reportResult.total}; Завершенных: {reportResult.completed}; Активных: {reportResult.active};");
+        }
+
+        public void UserItemsFindCommand(ITelegramBotClient botClient, Message botMessage)
+        {
+            string errorMessage;
+            ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
+
+            if (toDoUser == null)
+            {
+                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage);
 
                 return;
             }
 
-            StringBuilder str = new();
-            for (int i = 0; i < userCommands.Count; ++i)
-            {
-                ToDoItem item = userCommands.ElementAt(i);
-                if (item != null)
-                {
-                    str.AppendLine($" ({item.GetStateName()}) {item.ToString()}");
-                }
-            }
+            List<string> commandArgs = GetCommandArguments(botMessage.Text);
+            var userCommands = _toDoService.Find(toDoUser, string.Join(" ", commandArgs));
 
-            botClient.SendMessage(botMessage.Chat, str.ToString());
+            botClient.SendMessage(botMessage.Chat, GetToDoItemsStringList(userCommands));
         }
 
         private static void ShowException(ITelegramBotClient botClient, Chat botChat, string message)
         {
             botClient.SendMessage(botChat, message);
         }
-        private List<string> GetArguments(string line)
+        private List<string> GetCommandArguments(string line)
         {
             List<string> argsList = new();
 
@@ -500,6 +534,28 @@ namespace HW2
             }
 
             return (_userService.GetUser(telegramUserId) != null);
+        }
+        private string GetToDoItemsStringList(IReadOnlyList<ToDoItem> items)
+        {
+            StringBuilder str = new();
+
+            if (items.Count == 0)
+            {
+                str.Append("Список задач пуст.");
+            }
+            else
+            {
+                for (int i = 0; i < items.Count; ++i)
+                {
+                    ToDoItem item = items.ElementAt(i);
+                    if (item != null)
+                    {
+                        str.AppendLine($" ({item.GetStateName()}) {item.ToString()}");
+                    }
+                }
+            }
+
+            return str.ToString();
         }
     }
 }
