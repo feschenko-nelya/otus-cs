@@ -11,27 +11,29 @@ namespace HW2.Bot_Item
         {
             _toDoRepository = toDoRepository;
         }
-        public (int total, int completed, int active, DateTime generatedAt) GetUserStats(Guid userId)
+        public async Task<(int total, int completed, int active, DateTime generatedAt)> GetUserStats(Guid userId, CancellationToken cancelToken)
         {
-            (int total, int completed, int active, DateTime generatedAt) result = (0, 0, 0, DateTime.Now);
+            var items = await _toDoRepository.GetAllByUserId(userId, cancelToken);
 
-            var items = _toDoRepository.GetAllByUserId(userId);
-
-            foreach (ToDoItem item in items)
+            return await Task<(int total, int completed, int active, DateTime generatedAt)>.Run(() =>
             {
-                if (item.State == ToDoItemState.Completed)
+                (int total, int completed, int active, DateTime generatedAt) result = (0, 0, 0, DateTime.Now);
+                foreach (ToDoItem item in items)
                 {
-                    result.completed += 1;
-                }
-                else if (item.State == ToDoItemState.Active)
-                {
-                    result.active += 1;
+                    if (item.State == ToDoItemState.Completed)
+                    {
+                        result.completed += 1;
+                    }
+                    else if (item.State == ToDoItemState.Active)
+                    {
+                        result.active += 1;
+                    }
+
+                    result.total += 1;
                 }
 
-                result.total += 1;
-            }
-
-            return result;
+                return result;
+            });
         }
     }
 }

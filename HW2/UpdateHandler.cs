@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using HW2.Bot_Item;
 using HW2.Item;
 using HW2.User;
@@ -15,15 +16,15 @@ namespace HW2
         private static readonly Version _version = new Version(1, 0);
         private static readonly DateTime _creationDate = new DateTime(2025, 3, 27);
 
-        delegate void dlgtDoCommand(ITelegramBotClient botClient, Message botMessage);
+        delegate Task CommandExecutionHandler(ITelegramBotClient botClient, Message botMessage, CancellationToken ct);
         struct CommandData
         {
             public string code;
-            public dlgtDoCommand execute;
+            public CommandExecutionHandler execute;
             public string help;
             public bool isUsers = false;
 
-            public CommandData(string code, dlgtDoCommand command, string help, bool isUsers = false)
+            public CommandData(string code, CommandExecutionHandler command, string help, bool isUsers = false)
             {
                 this.code = code;
                 this.help = help;
@@ -32,6 +33,10 @@ namespace HW2
             }
         }
         List<CommandData> _commands = new();
+
+        public delegate void MessageEventHandler(string message);
+        event MessageEventHandler OnHandleUpdateStarted = delegate { };
+        event MessageEventHandler OnHandleUpdateCompleted = delegate { };
 
         public UpdateHandler(IUserService userService, IToDoService toDoService)
         {
@@ -90,14 +95,17 @@ namespace HW2
                                           true));
         }
 
-        public void HandleUpdateAsync(ITelegramBotClient botClient, Update update)
+        public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
             Message botMessage = update.Message;
+
+            OnHandleUpdateStarted.Invoke(botMessage.Text);
 
             try
             {
                 if (string.IsNullOrEmpty(botMessage.Text))
                 {
+                    OnHandleUpdateCompleted.Invoke(botMessage.Text);
                     return;
                 }
 
@@ -106,29 +114,42 @@ namespace HW2
 
                 if (command.Equals(default(CommandData)))
                 {
-                    botClient.SendMessage(botMessage.Chat, $"Команда '{args[0]}' не поддерживается. Введите другую.");
+                    await botClient.SendMessage(botMessage.Chat, $"Команда '{args[0]}' не поддерживается. Введите другую.", ct);
+                    
+                    OnHandleUpdateCompleted.Invoke(botMessage.Text);
+                    
                     return;
                 }
 
                 if (command.code.Length == 0)
                 {
-                    throw new Exception("Отсутствует объект команды: " + args[0]);
+                    await HandleErrorAsync(botClient, new Exception("Отсутствует объект команды: " + args[0]), ct);
+
+                    OnHandleUpdateCompleted.Invoke(botMessage.Text);
+
+                    return;
                 }
 
-                if (command.isUsers && !IsEnabled(botMessage.From.Id))
+                if (command.isUsers && !await IsEnabled(botMessage.From.Id, ct))
                 {
-                    throw new Exception($"Команда '{command.code}' недоступна.");
+                    await HandleErrorAsync(botClient, new Exception($"Команда '{command.code}' недоступна."), ct);
+
+                    OnHandleUpdateCompleted.Invoke(botMessage.Text);
+
+                    return;
                 }
 
-                command.execute(botClient, botMessage);
+                await command.execute(botClient, botMessage, ct);
             }
             catch (Exception exception)
             {
-                ProcessException(botClient, botMessage.Chat, exception);
+                await HandleErrorAsync(botClient, exception, ct);
             }
+
+            OnHandleUpdateCompleted.Invoke(botMessage.Text);
         }
 
-        private void StartCommand(ITelegramBotClient botClient, Message botMessage)
+        private async Task StartCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             string userName = "_";
             if (botMessage.From.Username != null)
@@ -136,32 +157,36 @@ namespace HW2
                 userName = botMessage.From.Username;
             }
 
-            ToDoUser? toDoUser = _userService.RegisterUser(botMessage.From.Id, userName);
+            Task<ToDoUser>? toDoUser = _userService.RegisterUser(botMessage.From.Id, userName, ct);
 
             if (toDoUser == null)
             {
-                botClient.SendMessage(botMessage.Chat, $"Здравствуйте, {userName}. Вы не зарегистрированы.");
+                await botClient.SendMessage(botMessage.Chat, $"Здравствуйте, {userName}. Вы не зарегистрированы.", ct);
             }
             else
             {
-                botClient.SendMessage(botMessage.Chat, $"{toDoUser.TelegramUserName}, Вы зарегистрированы.");
+                await botClient.SendMessage(botMessage.Chat, $"{toDoUser.Result.TelegramUserName}, Вы зарегистрированы.", ct);
             }
         }
 
-        private void InfoCommand(ITelegramBotClient botClient, Message botMessage)
+        private async Task InfoCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
-            botClient.SendMessage(botMessage.Chat, $"Version: {_version.ToString()}");
-            botClient.SendMessage(botMessage.Chat, $"Creation date: {_creationDate.ToString("dd.MM.yyyy")}");
+            await botClient.SendMessage(botMessage.Chat, 
+                $"""
+                    Version: {_version.ToString()}", ct);
+                    Creation date: {_creationDate.ToString("dd.MM.yyyy")}
+                """, 
+                ct);
         }
 
-        private void EndCommand(ITelegramBotClient botClient, Message botMessage)
+        private async Task EndCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             StringBuilder str = new();
             str.Append("Команда окончания, которая ничего не делает.");
 
-            botClient.SendMessage(botMessage.Chat, str.ToString());
+            await botClient.SendMessage(botMessage.Chat, str.ToString(), ct);
         }
-        private void HelpCommand(ITelegramBotClient botClient, Message botMessage)
+        private async Task HelpCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             StringBuilder str = new();
             str.AppendLine("Краткая информация о программе:");
@@ -169,7 +194,7 @@ namespace HW2
             foreach (CommandData command in _commands)
             {
                 // пропустить неактивные команды
-                if (command.isUsers && !IsEnabled(botMessage.From.Id))
+                if (command.isUsers && !await IsEnabled(botMessage.From.Id, ct))
                 {
                     continue;
                 }
@@ -179,16 +204,15 @@ namespace HW2
                 str.AppendLine(command.help);
             }
 
-            botClient.SendMessage(botMessage.Chat, str.ToString());
+            await botClient.SendMessage(botMessage.Chat, str.ToString(), ct);
         }
-        private void UserItemsAddCommand(ITelegramBotClient botClient, Message botMessage)
+        private async Task UserItemsAddCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
-            string errorMessage;
-            ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
+            var user = await GetToDoUser(botMessage.From.Id, ct);
 
-            if (toDoUser == null)
+            if (user.obj == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage);
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + user.error, ct);
 
                 return;
             }
@@ -197,30 +221,29 @@ namespace HW2
 
             if (args.Count == 0)
             {
-                botClient.SendMessage(botMessage.Chat, "Введите название задачи.");
+                await botClient.SendMessage(botMessage.Chat, "Введите название задачи.", ct);
                 return;
             }
 
             string commandName = string.Join(" ", args);
 
-            ToDoItem? newItem = _toDoService.Add(toDoUser.UserId, string.Join(" ", args));
+            ToDoItem? newItem = await _toDoService.Add(user.obj.UserId, string.Join(" ", args), ct);
             if (newItem != null)
             {
-                botClient.SendMessage(botMessage.Chat, $"Задача '{newItem.Name}' добавлена.");
+                await botClient.SendMessage(botMessage.Chat, $"Задача '{newItem.Name}' добавлена.", ct);
             }
             else
             {
-                botClient.SendMessage(botMessage.Chat, "Задача не добавлена.");
+                await botClient.SendMessage(botMessage.Chat, "Задача не добавлена.", ct);
             }
         }
-        private void UserItemsCompleteCommand(ITelegramBotClient botClient, Message botMessage)
+        private async Task UserItemsCompleteCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
-            string errorMessage;
-            ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
+            var user = await GetToDoUser(botMessage.From.Id, ct);
 
-            if (toDoUser == null)
+            if (user.obj == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage);
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + user.error, ct);
 
                 return;
             }
@@ -228,34 +251,33 @@ namespace HW2
             List<string> args = GetCommandArguments(botMessage.Text);
             if (args.Count == 0)
             {
-                botClient.SendMessage(botMessage.Chat, "Введите Guid команды, которую нужно удалить.");
+                await botClient.SendMessage(botMessage.Chat, "Введите Guid команды, которую нужно удалить.", ct);
                 return;
             }
 
             Guid guid;
             if (!Guid.TryParse(args.ElementAt(0), out guid))
             {
-                botClient.SendMessage(botMessage.Chat, "Guid команды неверный.");
+                await botClient.SendMessage(botMessage.Chat, "Guid команды неверный.", ct);
                 return;
             }
 
-            if (_toDoService.MarkCompleted(toDoUser.UserId, guid))
+            if (await _toDoService.MarkCompleted(user.obj.UserId, guid, ct))
             {
-                botClient.SendMessage(botMessage.Chat, "Команда отмечена как выполненная.");
+                await botClient.SendMessage(botMessage.Chat, "Команда отмечена как выполненная.", ct);
             }
             else
             {
-                botClient.SendMessage(botMessage.Chat, "Команда не отмечена как выполненная.");
+                await botClient.SendMessage(botMessage.Chat, "Команда не отмечена как выполненная.", ct);
             }
         }
-        private void UserItemsRemoveCommand(ITelegramBotClient botClient, Message botMessage)
+        private async Task UserItemsRemoveCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
-            string errorMessage;
-            ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
+            var user = await GetToDoUser(botMessage.From.Id, ct);
 
-            if (toDoUser == null)
+            if (user.obj == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage);
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + user.error, ct);
 
                 return;
             }
@@ -263,34 +285,33 @@ namespace HW2
             List<string> args = GetCommandArguments(botMessage.Text);
             if (args.Count == 0)
             {
-                botClient.SendMessage(botMessage.Chat, "Введите Guid команды, которую нужно удалить.");
+                await botClient.SendMessage(botMessage.Chat, "Введите Guid команды, которую нужно удалить.", ct);
                 return;
             }
 
             Guid guid;
             if (!Guid.TryParse(args.ElementAt(0), out guid))
             {
-                botClient.SendMessage(botMessage.Chat, "Guid команды неверный.");
+                await botClient.SendMessage(botMessage.Chat, "Guid команды неверный.", ct);
                 return;
             }
 
-            if (_toDoService.Delete(toDoUser.UserId, guid))
+            if (await _toDoService.Delete(user.obj.UserId, guid, ct))
             {
-                botClient.SendMessage(botMessage.Chat, "Команда удалена.");
+                await botClient.SendMessage(botMessage.Chat, "Команда удалена.", ct);
             }
             else
             {
-                botClient.SendMessage(botMessage.Chat, "Команда не удалена.");
+                await botClient.SendMessage(botMessage.Chat, "Команда не удалена.", ct);
             }
         }
-        private void UserItemsSetMaxLengthCommand(ITelegramBotClient botClient, Message botMessage)
+        private async Task UserItemsSetMaxLengthCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
-            string errorMessage;
-            ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
+            var user = await GetToDoUser(botMessage.From.Id, ct);
 
-            if (toDoUser == null)
+            if (user.obj == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage);
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + user.error, ct);
 
                 return;
             }
@@ -299,39 +320,38 @@ namespace HW2
             List<string> args = GetCommandArguments(botMessage.Text);
             if (args.Count == 0)
             {
-                botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).");
+                await botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).", ct);
                 return;
             }
 
             short length = -1;
             if (!short.TryParse(args.ElementAt(0), out length))
             {
-                botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).");
+                await botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).", ct);
                 return;
             }
 
             if (length < minLength)
             {
-                botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).");
+                await botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимую длину задачи (от {minLength}).", ct);
                 return;
             }
 
             var toDoService = (ToDoService)_toDoService;
             if (toDoService != null)
             {
-                toDoService.SetMaxLength(toDoUser.UserId, length);
+                toDoService.SetMaxLength(user.obj.UserId, length);
 
-                botClient.SendMessage(botMessage.Chat, $"Установлена максимальная длина задачи: {length}.");
+                await botClient.SendMessage(botMessage.Chat, $"Установлена максимальная длина задачи: {length}.", ct);
             }
         }
-        private void UserItemsSetMaxNumberCommand(ITelegramBotClient botClient, Message botMessage)
+        private async Task UserItemsSetMaxNumberCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
-            string errorMessage;
-            ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
+            var user = await GetToDoUser(botMessage.From.Id, ct);
 
-            if (toDoUser == null)
+            if (user.obj == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage);
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + user.error, ct);
 
                 return;
             }
@@ -342,50 +362,49 @@ namespace HW2
             List<string> args = GetCommandArguments(botMessage.Text);
             if (args.Count == 0)
             {
-                botClient.SendMessage(botMessage.Chat,
-                                      $"Введите максимально допустимое количество задач в пределе [{minNumber}, {maxNumber}].");
+                await botClient.SendMessage(botMessage.Chat,
+                                            $"Введите максимально допустимое количество задач в пределе [{minNumber}, {maxNumber}].", ct);
                 return;
             }
 
             short number = -1;
             if (!short.TryParse(args.ElementAt(0), out number))
             {
-                botClient.SendMessage(botMessage.Chat,
-                                      $"Введите максимально допустимое количество задач в пределе [{minNumber}, {maxNumber}].");
+                await botClient.SendMessage(botMessage.Chat,
+                                            $"Введите максимально допустимое количество задач в пределе [{minNumber}, {maxNumber}].", ct);
                 return;
             }
 
             if (number < minNumber || number > maxNumber)
             {
-                botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимое количество задач в пределе [{minNumber}, {maxNumber}].");
+                await botClient.SendMessage(botMessage.Chat, $"Введите максимально допустимое количество задач в пределе [{minNumber}, {maxNumber}].", ct);
                 return;
             }
 
             var toDoService = (ToDoService)_toDoService;
             if (toDoService != null)
             {
-                toDoService.SetMaxNumber(toDoUser.UserId, number);
+                toDoService.SetMaxNumber(user.obj.UserId, number);
 
-                botClient.SendMessage(botMessage.Chat, $"Установлено максимально допустимое количество задач: {number}.");
+                await botClient.SendMessage(botMessage.Chat, $"Установлено максимально допустимое количество задач: {number}.", ct);
             }
         }
-        private void UserItemsShowActiveCommand(ITelegramBotClient botClient, Message botMessage)
+        private async Task UserItemsShowActiveCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
-            string errorMessage;
-            ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
+            var user = await GetToDoUser(botMessage.From.Id, ct);
 
-            if (toDoUser == null)
+            if (user.obj == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage);
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + user.error, ct);
 
                 return;
             }
 
-            var userCommands = _toDoService.GetActiveByUserId(toDoUser.UserId);
+            var userCommands = await _toDoService.GetActiveByUserId(user.obj.UserId, ct);
 
             if (userCommands.Count == 0)
             {
-                botClient.SendMessage(botMessage.Chat, "Список задач пуст.");
+                await botClient.SendMessage(botMessage.Chat, "Список задач пуст.", ct);
 
                 return;
             }
@@ -400,10 +419,9 @@ namespace HW2
                 }
             }
 
-            botClient.SendMessage(botMessage.Chat, str.ToString());
+            await botClient.SendMessage(botMessage.Chat, str.ToString(), ct);
         }
-
-        private static void ProcessException(ITelegramBotClient botClient, Chat botChat, Exception exception)
+        public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken ct)
         {
             if ((exception.GetType() == typeof(ArgumentException))
                 || (exception.GetType() == typeof(TaskCountLimitException))
@@ -411,40 +429,41 @@ namespace HW2
                 || (exception.GetType() == typeof(DuplicateTaskException))
                )
             {
-                ShowException(botClient, botChat, exception.Message);
+                Console.WriteLine($"Handle error: {exception.Message}");
             }
             else
             {
-                ShowException(botClient, botChat, 
-                        $"""
-                        Произошла непредвиденная ошибка.
-                        Детальная информация:
+                Console.WriteLine($"""
+                                            Handle error
+                                            Произошла непредвиденная ошибка.
+                                            Детальная информация:
 
-                        Type: {exception.GetType}
-                        Message: {exception.Message}
-                        Stack trace: 
-                        {exception.StackTrace}
-                        Inner exception: {exception.InnerException}
-                        """);
+                                            Type: {exception.GetType}
+                                            Message: {exception.Message}
+                                            Stack trace: 
+                                            {exception.StackTrace}
+                                            Inner exception: {exception.InnerException}
+                                            """);
             }
-        }
-        private void UserItemsShowAllCommand(ITelegramBotClient botClient, Message botMessage)
-        {
-            string errorMessage;
-            ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
 
-            if (toDoUser == null)
+            return Task.CompletedTask;
+        }
+        private async Task UserItemsShowAllCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
+        {
+            var user = await GetToDoUser(botMessage.From.Id, ct);
+
+            if (user.obj == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage);
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + user.error, ct);
 
                 return;
             }
 
-            var userCommands = _toDoService.GetAllByUserId(toDoUser.UserId);
+            var userCommands = await _toDoService.GetAllByUserId(user.obj.UserId, ct);
 
-            botClient.SendMessage(botMessage.Chat, GetToDoItemsStringList(userCommands));
+            await botClient.SendMessage(botMessage.Chat, GetToDoItemsStringList(userCommands), ct);
         }
-        private void UserItemsReportCommand(ITelegramBotClient botClient, Message botMessage)
+        private async Task UserItemsReportCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
             ToDoService? toDoService = (ToDoService)_toDoService;
 
@@ -453,7 +472,7 @@ namespace HW2
                 return;
             }
 
-            ToDoUser? user = _userService.GetUser(botMessage.From.Id);
+            ToDoUser? user = await _userService.GetUser(botMessage.From.Id, ct);
 
             if (user == null)
             {
@@ -462,34 +481,28 @@ namespace HW2
 
             ToDoReportService report = new(toDoService.ToDoRepository);
             
-            var reportResult = report.GetUserStats(user.UserId);
+            var reportResult = await report.GetUserStats(user.UserId, ct);
 
-            botClient.SendMessage(botMessage.Chat, 
-                                  $"Статистика по задачам на {reportResult.generatedAt.ToString("dd.MM.yyyy HH:mm:ss")}. " +
-                                  $"Всего: {reportResult.total}; Завершенных: {reportResult.completed}; Активных: {reportResult.active};");
+            await botClient.SendMessage(botMessage.Chat, 
+                                        $"Статистика по задачам на {reportResult.generatedAt.ToString("dd.MM.yyyy HH:mm:ss")}. " +
+                                        $"Всего: {reportResult.total}; Завершенных: {reportResult.completed}; Активных: {reportResult.active};",
+                                        ct);
         }
-
-        public void UserItemsFindCommand(ITelegramBotClient botClient, Message botMessage)
+        public async Task UserItemsFindCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
-            string errorMessage;
-            ToDoUser? toDoUser = GetToDoUser(botMessage.From.Id, out errorMessage);
+            var user = await GetToDoUser(botMessage.From.Id, ct);
 
-            if (toDoUser == null)
+            if (user.obj == null)
             {
-                botClient.SendMessage(botMessage.Chat, "Ошибка: " + errorMessage);
+                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + user.error, ct);
 
                 return;
             }
 
             List<string> commandArgs = GetCommandArguments(botMessage.Text);
-            var userCommands = _toDoService.Find(toDoUser, string.Join(" ", commandArgs));
+            var userCommands = await _toDoService.Find(user.obj, string.Join(" ", commandArgs), ct);
 
-            botClient.SendMessage(botMessage.Chat, GetToDoItemsStringList(userCommands));
-        }
-
-        private static void ShowException(ITelegramBotClient botClient, Chat botChat, string message)
-        {
-            botClient.SendMessage(botChat, message);
+            await botClient.SendMessage(botMessage.Chat, GetToDoItemsStringList(userCommands), ct);
         }
         private List<string> GetCommandArguments(string line)
         {
@@ -506,34 +519,54 @@ namespace HW2
 
             return argsList;
         }
-        private ToDoUser? GetToDoUser(long telegramUserId, out string errorMessage)
+        private async Task<(ToDoUser? obj, string error)> GetToDoUser(long telegramUserId, CancellationToken cancelToken)
         {
-            errorMessage = "";
+            (ToDoUser? obj, string error) result = (obj: null, error: "");
 
-            if (_userService == null || !IsEnabled(telegramUserId))
+            if (_userService == null || !await IsEnabled(telegramUserId, cancelToken))
             {
-                errorMessage = "Команда не доступна.";
-                return null;
+                result.Item2 = "Команда не доступна.";
+                return result;
             }
 
-            ToDoUser? toDoUser = _userService.GetUser(telegramUserId);
+            result.Item1 = await _userService.GetUser(telegramUserId, cancelToken);
 
-            if (toDoUser == null)
+            if (result.Item1 == null)
             {
-                errorMessage = "Пользователь не найден.";
-                return null;
+                result.Item2 = "Пользователь не найден.";
+                return result;
             }
 
-            return toDoUser;
+            return result;
         }
-        private bool IsEnabled(long telegramUserId)
+        private async Task<bool> IsEnabled(long telegramUserId, CancellationToken cancelToken)
         {
             if (_userService == null)
             {
                 return false;
             }
 
-            return (_userService.GetUser(telegramUserId) != null);
+            return (await _userService.GetUser(telegramUserId, cancelToken) != null);
+        }
+        public void OnStartedSubscribe(MessageEventHandler handler)
+        {
+            OnHandleUpdateStarted += handler;
+        }
+        public void OnCompletedSubscribe(MessageEventHandler handler)
+        {
+            OnHandleUpdateCompleted += handler;
+        }
+        public void UnsubscribeAll()
+        {
+            foreach (MessageEventHandler d in OnHandleUpdateStarted.GetInvocationList())
+            {
+                OnHandleUpdateStarted -= d;
+            }
+
+            foreach (MessageEventHandler d in OnHandleUpdateCompleted.GetInvocationList())
+            {
+                OnHandleUpdateCompleted -= d;
+            }
         }
         private string GetToDoItemsStringList(IReadOnlyList<ToDoItem> items)
         {

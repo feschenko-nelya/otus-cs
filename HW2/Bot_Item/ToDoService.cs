@@ -26,25 +26,25 @@ namespace HW2.Item
         {
             ToDoRepository = toDoRepository;
         }
-        public IReadOnlyList<ToDoItem> GetActiveByUserId(Guid userId)
+        public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken cancelToken)
         {
-            return ToDoRepository.GetActiveByUserId(userId);
+            return await ToDoRepository.GetActiveByUserId(userId, cancelToken);
         }
 
-        public IReadOnlyList<ToDoItem> GetAllByUserId(Guid userId)
+        public async Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken cancelToken)
         {
-            return ToDoRepository.GetAllByUserId(userId);
+            return await ToDoRepository.GetAllByUserId(userId, cancelToken);
         }
-        public IReadOnlyList<ToDoItem> Find(ToDoUser user, string namePrefix)
+        public async Task<IReadOnlyList<ToDoItem>> Find(ToDoUser user, string namePrefix, CancellationToken cancelToken)
         {
             Func<ToDoItem, bool> predicate = (item) => item.Name.StartsWith(namePrefix);
 
-            return ToDoRepository.Find(user.UserId, predicate);
+            return await ToDoRepository.Find(user.UserId, predicate, cancelToken);
         }
 
-        public bool MarkCompleted(Guid userId, Guid itemId)
+        public async Task<bool> MarkCompleted(Guid userId, Guid itemId, CancellationToken cancelToken)
         {
-            ToDoItem? item = ToDoRepository.Get(itemId);
+            ToDoItem? item = await ToDoRepository.Get(itemId, cancelToken);
 
             if (item == null)
             {
@@ -56,12 +56,12 @@ namespace HW2.Item
             return true;
         }
 
-        public ToDoItem Add(Guid userId, string name)
+        public async Task<ToDoItem> Add(Guid userId, string name, CancellationToken cancelToken)
         {
             ItemLimit userItemLimit = GetUserItemLimit(userId);
 
-            
-            if (ToDoRepository.GetAllByUserId(userId).Count == userItemLimit.Number)
+            IReadOnlyList<ToDoItem> items = await ToDoRepository.GetAllByUserId(userId, cancelToken);
+            if (items.Count == userItemLimit.Number)
             {
                 throw new TaskCountLimitException(userItemLimit.Number);
             }
@@ -71,7 +71,7 @@ namespace HW2.Item
                 throw new TaskLengthLimitException(name.Length, userItemLimit.Length);
             }
 
-            if (ToDoRepository.ExistsByName(userId, name))
+            if (ToDoRepository.ExistsByName(userId, name, cancelToken).Result)
             {
                 throw new DuplicateTaskException(name);
             }
@@ -79,14 +79,14 @@ namespace HW2.Item
             var newItem = new ToDoItem(name);
             newItem.UserId = userId;
 
-            ToDoRepository.Add(newItem);
+            await ToDoRepository.Add(newItem, cancelToken);
 
             return newItem;
         }
 
-        public bool Delete(Guid userId, Guid itemId)
+        public async Task<bool> Delete(Guid userId, Guid itemId, CancellationToken cancelToken)
         {
-            ToDoRepository.Delete(itemId);
+            await ToDoRepository.Delete(itemId, cancelToken);
             
             return true;
         }

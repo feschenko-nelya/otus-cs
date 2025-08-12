@@ -8,7 +8,7 @@ namespace HW2.User
 {
     internal interface IUserService
     {
-        ToDoUser RegisterUser(long telegramUserId, string telegramUserName);
-        ToDoUser? GetUser(long telegramUserId);
+        Task<ToDoUser> RegisterUser(long telegramUserId, string telegramUserName, CancellationToken cancelToken);
+        Task<ToDoUser?> GetUser(long telegramUserId, CancellationToken cancelToken);
     }
 }
