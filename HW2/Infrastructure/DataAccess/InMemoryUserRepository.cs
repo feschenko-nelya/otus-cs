@@ -1,6 +1,7 @@
-﻿using HW2.User;
+﻿using Core.Entity;
+using Core.DataAccess;
 
-namespace HW2.Bot_User
+namespace Infrastructure.DataAccess
 {
     internal class InMemoryUserRepository : IUserRepository
     {

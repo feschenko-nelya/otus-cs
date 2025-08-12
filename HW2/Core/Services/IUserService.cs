@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Core.Entity;
 
-namespace HW2.User
+namespace Core.Services
 {
     internal interface IUserService
     {

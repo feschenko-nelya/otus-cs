@@ -1,7 +1,7 @@
 ﻿
-using HW2.User;
+using Core.Entity;
 
-namespace HW2.Bot_User
+namespace Core.DataAccess
 {
     public interface IUserRepository
     {

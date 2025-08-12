@@ -1,10 +1,10 @@
-﻿using System;
-using System.Text;
-using HW2.Bot_Item;
-using HW2.Item;
-using HW2.User;
+﻿using System.Text;
 using Otus.ToDoList.ConsoleBot;
 using Otus.ToDoList.ConsoleBot.Types;
+using Core.Services;
+using Core.Entity;
+using Infrastructure.DataAccess;
+using Infrastructure.Services;
 
 namespace HW2
 {

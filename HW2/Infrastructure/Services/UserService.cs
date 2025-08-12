@@ -1,6 +1,8 @@
-﻿using HW2.Bot_User;
+﻿using Core.Entity;
+using Core.Services;
+using Core.DataAccess;
 
-namespace HW2.User
+namespace Infrastructure.Services
 {
     public class UserService : IUserService
     {

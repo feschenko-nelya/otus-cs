@@ -1,9 +1,8 @@
-﻿
-using System.Reflection.Metadata.Ecma335;
-using HW2.Bot_Item;
-using HW2.User;
+﻿using Core.Services;
+using Core.DataAccess;
+using Core.Entity;
 
-namespace HW2.Item
+namespace Infrastructure.Services
 {
     public class ToDoService : IToDoService
     {

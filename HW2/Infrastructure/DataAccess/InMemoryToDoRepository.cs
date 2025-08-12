@@ -1,7 +1,7 @@
-﻿using HW2.User;
-using Otus.ToDoList.ConsoleBot.Types;
+﻿using Core.Entity;
+using Core.DataAccess;
 
-namespace HW2.Bot_Item
+namespace Infrastructure.DataAccess
 {
     internal class InMemoryToDoRepository : IToDoRepository
     {

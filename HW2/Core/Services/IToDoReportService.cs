@@ -1,5 +1,5 @@
 ﻿
-namespace HW2.Bot_Item
+namespace Core.DataAccess
 {
     public interface IToDoReportService
     {

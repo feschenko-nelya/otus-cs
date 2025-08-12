@@ -1,4 +1,4 @@
-﻿namespace HW2.User
+﻿namespace Core.Entity
 {
     public enum ToDoItemState 
     { 

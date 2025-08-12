@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace HW2.User
+﻿
+namespace Core.Entity
 {
     public class ToDoUser
     {

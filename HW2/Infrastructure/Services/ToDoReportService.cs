@@ -1,8 +1,7 @@
-﻿
+﻿using Core.Entity;
+using Core.DataAccess;
 
-using HW2.User;
-
-namespace HW2.Bot_Item
+namespace Infrastructure.DataAccess
 {
     internal class ToDoReportService : IToDoReportService
     {

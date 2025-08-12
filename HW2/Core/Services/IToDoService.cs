@@ -1,6 +1,6 @@
-﻿using HW2.User;
+﻿using Core.Entity;
 
-namespace HW2
+namespace Core.Services
 {
     public interface IToDoService
     {

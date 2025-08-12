@@ -1,9 +1,8 @@
 ﻿
-using HW2.Bot_Item;
-using HW2.Bot_User;
-using HW2.Item;
-using HW2.User;
 using Otus.ToDoList.ConsoleBot;
+using Core.DataAccess;
+using Infrastructure.DataAccess;
+using Infrastructure.Services;
 
 namespace HW2
 {
