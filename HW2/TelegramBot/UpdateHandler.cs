@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Text;
 using System.Windows.Input;
 using Core.Entity;
 using Core.Services;
@@ -220,6 +221,8 @@ namespace HW2
             }
             else
             {
+                await botClient.SetMyCommands(await GetBotCommands(botMessage.From.Id, ct));
+
                 var keyboard = await GetReplyKeyboardMarkup(botMessage.From.Id, ct);
 
                 await botClient.SendMessage(botMessage.Chat, $"{toDoUser.Result.TelegramUserName}, Вы зарегистрированы.",
@@ -267,6 +270,23 @@ namespace HW2
             }
             
             return keayboard;
+        }
+
+        public async Task<List<BotCommand>> GetBotCommands(long telegramUserId, CancellationToken ct)
+        {
+            List<BotCommand> botCommands = new();
+            
+            foreach (CommandData command in _commands)
+            {
+                if (command.isUsers && !await IsEnabled(telegramUserId, ct))
+                {
+                    continue;
+                }
+
+                botCommands.Add(new BotCommand(command.code, command.help));
+            }
+
+            return botCommands;
         }
 
         private async Task InfoCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)

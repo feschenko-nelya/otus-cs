@@ -4,6 +4,7 @@ using Infrastructure.DataAccess;
 using Infrastructure.Services;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
@@ -45,12 +46,16 @@ namespace HW2
                     DropPendingUpdates = true
                 };
 
+                //List<BotCommand> botCommands = [
+                //    new BotCommand("/start", "my start"),
+                //    new BotCommand("/info", "информация о боте")
+                //];
+                await botClient.SetMyCommands(await handler.GetBotCommands(-1, cts.Token));
+
                 botClient.StartReceiving(handler, receiverOptions: receiverOptions, cancellationToken: cts.Token);
 
                 var me = await botClient.GetMe();
                 Console.WriteLine($"{me.FirstName} запущен!");
-
-                //botClient.SendMessage();
 
                 Console.WriteLine("Нажмите клавишу A для выхода");
 
