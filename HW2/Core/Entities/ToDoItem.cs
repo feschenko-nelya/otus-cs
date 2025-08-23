@@ -30,7 +30,7 @@
         }
         public override string ToString()
         {
-            return $"{Name} - {CreatedAt.ToString("dd.MM.yyyy HH:mm:ss")} - {Id}";
+            return $"{Name} - {CreatedAt.ToString("dd.MM.yyyy HH:mm:ss")} - '{Id}'";
         }
 
         public string GetStateName()

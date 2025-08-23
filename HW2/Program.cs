@@ -1,14 +1,18 @@
 ﻿
-using Otus.ToDoList.ConsoleBot;
 using Core.DataAccess;
 using Infrastructure.DataAccess;
 using Infrastructure.Services;
+using Telegram.Bot;
+using Telegram.Bot.Polling;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace HW2
 {
     internal class Program
     {
-        static void Main()
+        static async Task Main()
         {
             using var cts = new CancellationTokenSource();
 
@@ -25,8 +29,46 @@ namespace HW2
                 handler.OnStartedSubscribe(OnUpdateHandlerStart);
                 handler.OnCompletedSubscribe(OnUpdateHandlerComplete);
 
-                var botClient = new ConsoleBotClient();
-                botClient.StartReceiving(handler, cts.Token);
+                string? telegramBotToken = System.Environment.GetEnvironmentVariable("TELEGRAM_BOT_TOKEN");
+
+                if (string.IsNullOrEmpty(telegramBotToken))
+                {
+                    Console.WriteLine("Отсутствует токен для активации телеграм-бота");
+                    return;
+                }
+
+                var botOptions = new TelegramBotClientOptions(telegramBotToken);
+                TelegramBotClient botClient = new TelegramBotClient(botOptions);
+
+                var receiverOptions = new ReceiverOptions
+                {
+                    AllowedUpdates = [UpdateType.Message],
+                    DropPendingUpdates = true
+                };
+
+                await botClient.SetMyCommands(await handler.GetBotCommands(-1, cts.Token));
+
+                botClient.StartReceiving(handler, receiverOptions: receiverOptions, cancellationToken: cts.Token);
+
+                var me = await botClient.GetMe();
+                Console.WriteLine($"{me.FirstName} запущен!");
+
+                Console.WriteLine("Нажмите клавишу A для выхода");
+
+                while (true)
+                {
+                    ConsoleKeyInfo key = Console.ReadKey();
+                    if (key.KeyChar == 'A')
+                    {
+                        cts.Cancel();
+                        await handler.RemoveKeyboard(botClient);
+                        Console.WriteLine();
+                        Console.WriteLine("Бот остановлен.");
+                        break;
+                    }
+                }
+
+                await Task.Delay(-1); // Устанавливаем бесконечную задержку
             }
             finally
             {
