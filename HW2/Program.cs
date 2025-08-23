@@ -5,6 +5,7 @@ using Infrastructure.Services;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace HW2
 {
@@ -49,6 +50,8 @@ namespace HW2
                 var me = await botClient.GetMe();
                 Console.WriteLine($"{me.FirstName} запущен!");
 
+                //botClient.SendMessage();
+
                 Console.WriteLine("Нажмите клавишу A для выхода");
 
                 while (true)
@@ -56,6 +59,8 @@ namespace HW2
                     ConsoleKeyInfo key = Console.ReadKey();
                     if (key.KeyChar == 'A')
                     {
+                        cts.Cancel();
+                        await handler.RemoveKeyboard(botClient);
                         Console.WriteLine();
                         Console.WriteLine("Бот остановлен.");
                         break;

@@ -1,21 +1,25 @@
 ﻿using System.Text;
-using Core.Services;
+using System.Windows.Input;
 using Core.Entity;
+using Core.Services;
 using Infrastructure.DataAccess;
 using Infrastructure.Services;
-using Telegram.Bot.Polling;
 using Telegram.Bot;
+using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace HW2
 {
-    internal class UpdateHandler : Telegram.Bot.Polling.IUpdateHandler
+    internal class UpdateHandler : IUpdateHandler
     {
         private readonly IUserService _userService;
         private readonly IToDoService _toDoService;
 
         private static readonly Version _version = new Version(1, 0);
         private static readonly DateTime _creationDate = new DateTime(2025, 3, 27);
+        private List<Chat> _chats = new();
 
         delegate Task CommandExecutionHandler(ITelegramBotClient botClient, Message botMessage, CancellationToken ct);
         struct CommandData
@@ -98,60 +102,110 @@ namespace HW2
 
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
-            Message botMessage = update.Message;
+            if (update is null)
+            {
+                return;
+            }
 
-            OnHandleUpdateStarted.Invoke(botMessage.Text);
+            Message botMessage = update.Message;
+            
+            if (botMessage is null)
+            {
+                return;
+            }
 
             try
             {
-                if (string.IsNullOrEmpty(botMessage.Text))
+                if (ct.IsCancellationRequested)
                 {
-                    OnHandleUpdateCompleted.Invoke(botMessage.Text);
-                    return;
+                    await botClient.SendMessage(botMessage.Chat, "", 
+                                                replyMarkup: new ReplyKeyboardRemove());
                 }
 
-                string[] args = update.Message.Text.Split(' ');
-                CommandData command = _commands.Find( command => command.code == args[0]);
-
-                if (command.Equals(default(CommandData)))
+                switch (update.Type)
                 {
-                    await botClient.SendMessage(botMessage.Chat, $"Команда '{args[0]}' не поддерживается. Введите другую.", cancellationToken: ct);
-                    
-                    OnHandleUpdateCompleted.Invoke(botMessage.Text);
-                    
+                case UpdateType.Message:
+                {
+                    await BotOnMessageReceived(botClient, botMessage, ct);
                     return;
                 }
-
-                if (command.code.Length == 0)
-                {
-                    await HandleErrorAsync(botClient, new Exception("Отсутствует объект команды: " + args[0]), HandleErrorSource.HandleUpdateError, ct);
-
-                    OnHandleUpdateCompleted.Invoke(botMessage.Text);
-
-                    return;
                 }
-
-                if (command.isUsers && !await IsEnabled(botMessage.From.Id, ct))
-                {
-                    await HandleErrorAsync(botClient, new Exception($"Команда '{command.code}' недоступна."), HandleErrorSource.HandleUpdateError, ct);
-
-                    OnHandleUpdateCompleted.Invoke(botMessage.Text);
-
-                    return;
-                }
-
-                await command.execute(botClient, botMessage, ct);
             }
             catch (Exception exception)
             {
                 await HandleErrorAsync(botClient, exception, HandleErrorSource.FatalError, ct);
             }
+        }
 
-            OnHandleUpdateCompleted.Invoke(botMessage.Text);
+        private async Task BotOnMessageReceived(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
+        {
+            if (botMessage.Type != MessageType.Text)
+            {
+                return;
+            }
+
+            string? botMessageText = botMessage.Text;
+
+            if (string.IsNullOrEmpty(botMessageText))
+            {
+                return;
+            }
+            OnHandleUpdateStarted.Invoke(botMessageText);
+
+            if (string.IsNullOrEmpty(botMessageText))
+            {
+                OnHandleUpdateCompleted.Invoke(botMessageText);
+                return;
+            }
+
+            string[] args = botMessageText.Split(' ');
+            CommandData command = _commands.Find(command => command.code == args[0]);
+
+            if (command.Equals(default(CommandData)))
+            {
+                await botClient.SendMessage(botMessage.Chat, $"Команда '{args[0]}' не поддерживается. Введите другую.", cancellationToken: ct);
+
+                OnHandleUpdateCompleted.Invoke(botMessageText);
+
+                return;
+            }
+
+            if (command.code.Length == 0)
+            {
+                await HandleErrorAsync(botClient, new Exception("Отсутствует объект команды: " + args[0]), HandleErrorSource.HandleUpdateError, ct);
+
+                OnHandleUpdateCompleted.Invoke(botMessageText);
+
+                return;
+            }
+
+            if (botMessage.From == null)
+            {
+                OnHandleUpdateCompleted.Invoke(botMessageText);
+                return;
+            }
+
+            if (command.isUsers && !await IsEnabled(botMessage.From.Id, ct))
+            {
+                await HandleErrorAsync(botClient, new Exception($"Команда '{command.code}' недоступна."), HandleErrorSource.HandleUpdateError, ct);
+
+                OnHandleUpdateCompleted.Invoke(botMessageText);
+
+                return;
+            }
+
+            await command.execute(botClient, botMessage, ct);
+
+            OnHandleUpdateCompleted.Invoke(botMessageText);
         }
 
         private async Task StartCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
+            if (botMessage.From == null)
+            {
+                return;
+            }
+
             string userName = "_";
             if (botMessage.From.Username != null)
             {
@@ -166,8 +220,53 @@ namespace HW2
             }
             else
             {
-                await botClient.SendMessage(botMessage.Chat, $"{toDoUser.Result.TelegramUserName}, Вы зарегистрированы.", cancellationToken: ct);
+                var keyboard = await GetReplyKeyboardMarkup(botMessage.From.Id, ct);
+
+                await botClient.SendMessage(botMessage.Chat, $"{toDoUser.Result.TelegramUserName}, Вы зарегистрированы.",
+                                            replyMarkup: keyboard, cancellationToken: ct);
+
+                if (_chats.Find(chat => chat.Id == botMessage.Chat.Id ) == null)
+                {
+                    _chats.Add(botMessage.Chat);
+                }
             }
+        }
+
+        public async Task RemoveKeyboard(ITelegramBotClient botClient)
+        {
+            foreach (var chat in _chats)
+            {
+                await botClient.SendMessage(chat.Id, "Бот завершил работу", replyMarkup: new ReplyKeyboardRemove());
+            }
+        }
+
+        private async Task<ReplyKeyboardMarkup> GetReplyKeyboardMarkup(long telegramUserId, CancellationToken ct)
+        {
+            var replyCommands = _commands.FindAll(c => 
+                                    c.code == "/showactivetasks"
+                                    || c.code == "/showalltasks"
+                                    || c.code == "/report"
+                                );
+
+            ReplyKeyboardMarkup keayboard = new();
+            keayboard.ResizeKeyboard = true;
+
+            foreach (CommandData command in replyCommands)
+            {
+                if (command.isUsers && !await IsEnabled(telegramUserId, ct))
+                {
+                    continue;
+                }
+
+                keayboard.AddNewRow(new KeyboardButton(command.code));
+            }
+
+            if (replyCommands.Count == 0)
+            {
+                keayboard.AddButton("/start");
+            }
+            
+            return keayboard;
         }
 
         private async Task InfoCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
@@ -185,7 +284,7 @@ namespace HW2
             StringBuilder str = new();
             str.Append("Команда окончания, которая ничего не делает.");
 
-            await botClient.SendMessage(botMessage.Chat, str.ToString(), cancellationToken: ct);
+            await botClient.SendMessage(botMessage.Chat, str.ToString(), cancellationToken: ct, replyMarkup: new ReplyKeyboardRemove());
         }
         private async Task HelpCommand(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
         {
