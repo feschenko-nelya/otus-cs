@@ -46,10 +46,6 @@ namespace HW2
                     DropPendingUpdates = true
                 };
 
-                //List<BotCommand> botCommands = [
-                //    new BotCommand("/start", "my start"),
-                //    new BotCommand("/info", "информация о боте")
-                //];
                 await botClient.SetMyCommands(await handler.GetBotCommands(-1, cts.Token));
 
                 botClient.StartReceiving(handler, receiverOptions: receiverOptions, cancellationToken: cts.Token);
