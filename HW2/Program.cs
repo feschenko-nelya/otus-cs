@@ -1,5 +1,6 @@
 ﻿
 using Core.DataAccess;
+using HW2.Infrastructure.DataAccess;
 using Infrastructure.DataAccess;
 using Infrastructure.Services;
 using Telegram.Bot;
@@ -14,7 +15,7 @@ namespace HW2
         {
             using var cts = new CancellationTokenSource();
 
-            IUserRepository usersRepository = new InMemoryUserRepository();
+            IUserRepository usersRepository = new FileUserRepository("ToDoUsers");
             UserService userService = new(usersRepository);
 
             IToDoRepository toDoRepository = new FileToDoRepository("ToDoItems");

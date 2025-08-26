@@ -6,7 +6,7 @@ namespace Infrastructure.DataAccess
 {
     internal class FileToDoRepository : IToDoRepository
     {
-        private string _repositoryDir;
+        private string _repositoryDir = "items";
 
         public FileToDoRepository(string repositoryDir)
         {
