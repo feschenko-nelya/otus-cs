@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Linq;
+using System.Text.Json;
 using Core.DataAccess;
 using Core.Entity;
 
@@ -7,7 +8,6 @@ namespace Infrastructure.DataAccess
     internal class FileToDoRepository : IToDoRepository
     {
         private string _repositoryDir = "items";
-        private SemaphoreSlim _semaphore = new SemaphoreSlim(3);
 
         public FileToDoRepository(string repositoryDir)
         {
@@ -21,16 +21,18 @@ namespace Infrastructure.DataAccess
                 throw new DirectoryNotFoundException();
             }
 
-            if (!Directory.Exists(_repositoryDir))
-            {
-                Directory.CreateDirectory(_repositoryDir);
-            }
-
             await Task.Run(() =>
             {
+                FileInfo itemFile = new(GetFileName(item));
+
+                if (!Directory.Exists(itemFile.DirectoryName))
+                {
+                    Directory.CreateDirectory(itemFile.DirectoryName);
+                }
+
                 string json = JsonSerializer.Serialize(item);
 
-                StreamWriter wstream = File.CreateText(GetFileName(item.Id));
+                StreamWriter wstream = File.CreateText(itemFile.FullName);
                 wstream.Write(json);
                 wstream.Flush();
                 wstream.Close();
@@ -44,7 +46,8 @@ namespace Infrastructure.DataAccess
                 throw new DirectoryNotFoundException();
             }
 
-            if (!Directory.Exists(_repositoryDir))
+            string userDirectory = Path.Combine(_repositoryDir, userId.GetHashCode().ToString());
+            if (!Directory.Exists(userDirectory))
             {
                 return 0;
             }
@@ -53,23 +56,13 @@ namespace Infrastructure.DataAccess
 
             await Task.Run(() =>
             {
-                var itemFiles = Directory.EnumerateFiles(_repositoryDir);
-                foreach (var itemFile in itemFiles)
-                {
-                    string itemJson = File.ReadAllText(itemFile);
-                    ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
-
-                    if (toDoItem?.UserId == userId && toDoItem?.State == ToDoItemState.Active)
-                    {
-                        count++;
-                    }
-                }
+                return Directory.EnumerateFiles(userDirectory).Count();
             });
 
             return count;
         }
 
-        public Task Delete(Guid id, CancellationToken cancelToken)
+        public async Task Delete(Guid id, CancellationToken cancelToken)
         {
             if (string.IsNullOrEmpty(_repositoryDir))
             {
@@ -78,15 +71,29 @@ namespace Infrastructure.DataAccess
 
             if (!Directory.Exists(_repositoryDir))
             {
-                return Task.CompletedTask;
+                return;
             }
 
-            string fileName = GetFileName(id);
+            string itemFile = id.GetHashCode().ToString() + ".json";
 
-            if (File.Exists(fileName))
-                File.Delete(fileName);
+            await Task.Run( () =>
+            {
+                var userDirs = Directory.GetDirectories(_repositoryDir);
+                foreach (var userDir in userDirs)
+                {
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
 
-            return Task.CompletedTask;
+                    FileInfo fileInfo = new(Path.Combine(userDir, itemFile));
+
+                    if (fileInfo.Exists)
+                    {
+                        fileInfo.Delete();
+                    }
+                }
+            });
         }
 
         public async Task<bool> ExistsByName(Guid userId, string name, CancellationToken cancelToken)
@@ -96,7 +103,8 @@ namespace Infrastructure.DataAccess
                 throw new DirectoryNotFoundException();
             }
 
-            if (!Directory.Exists(_repositoryDir))
+            string userDirectory = Path.Combine(_repositoryDir, userId.GetHashCode().ToString());
+            if (!Directory.Exists(userDirectory))
             {
                 return false;
             }
@@ -105,9 +113,14 @@ namespace Infrastructure.DataAccess
 
             await Task.Run(() =>
             {
-                var itemFiles = Directory.EnumerateFiles(_repositoryDir);
+                var itemFiles = Directory.EnumerateFiles(userDirectory);
                 foreach (var itemFile in itemFiles)
                 {
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
                     string itemJson = File.ReadAllText(itemFile);
                     ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
 
@@ -129,7 +142,8 @@ namespace Infrastructure.DataAccess
                 throw new DirectoryNotFoundException();
             }
 
-            if (!Directory.Exists(_repositoryDir))
+            string userDirectory = Path.Combine(_repositoryDir, userId.GetHashCode().ToString());
+            if (!Directory.Exists(userDirectory))
             {
                 return [];
             }
@@ -138,13 +152,18 @@ namespace Infrastructure.DataAccess
 
             await Task.Run(() =>
             {
-                var itemFiles = Directory.EnumerateFiles(_repositoryDir);
+                var itemFiles = Directory.EnumerateFiles(userDirectory);
                 foreach (var itemFile in itemFiles)
                 {
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
                     string itemJson = File.ReadAllText(itemFile);
                     ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
 
-                    if (toDoItem?.UserId == userId && predicate(toDoItem))
+                    if ((toDoItem != null) && predicate(toDoItem))
                     {
                         items.Add(toDoItem);
                     }
@@ -166,25 +185,48 @@ namespace Infrastructure.DataAccess
                 return null;
             }
 
-            ToDoItem? item = null;
-
+            string itemFileName = id.GetHashCode().ToString() + ".json";
+            ToDoItem? resItem = null;
             await Task.Run(() =>
             {
-                var itemFiles = Directory.EnumerateFiles(_repositoryDir);
-                foreach (var itemFile in itemFiles)
+                var userDirs = Directory.GetDirectories(_repositoryDir);
+                foreach (var userDir in userDirs)
                 {
-                    string itemJson = File.ReadAllText(itemFile);
-                    ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
-
-                    if (toDoItem?.Id == id)
+                    if (cancelToken.IsCancellationRequested)
                     {
-                        item = toDoItem;
+                        return;
+                    }
+
+                    var itemFiles = Directory.GetFiles(userDir);
+                    foreach (var itemFile in itemFiles)
+                    {
+                        if (cancelToken.IsCancellationRequested)
+                        {
+                            return;
+                        }
+
+                        FileInfo fileInfo = new(itemFile);
+                        if (fileInfo.Name == itemFileName)
+                        {
+                            string itemJson = File.ReadAllText(itemFile);
+                            ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
+
+                            if (toDoItem?.Id == id)
+                            {
+                                resItem = toDoItem;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (resItem != null)
+                    {
                         break;
                     }
                 }
             });
 
-            return item;
+            return resItem;
         }
 
         public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken cancelToken)
@@ -194,7 +236,8 @@ namespace Infrastructure.DataAccess
                 throw new DirectoryNotFoundException();
             }
 
-            if (!Directory.Exists(_repositoryDir))
+            string userDirectory = Path.Combine(_repositoryDir, userId.GetHashCode().ToString());
+            if (!Directory.Exists(userDirectory))
             {
                 return [];
             }
@@ -203,13 +246,18 @@ namespace Infrastructure.DataAccess
 
             await Task.Run(() =>
             {
-                var itemFiles = Directory.EnumerateFiles(_repositoryDir);
+                var itemFiles = Directory.EnumerateFiles(userDirectory);
                 foreach (var itemFile in itemFiles)
                 {
+                    if (cancelToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
                     string itemJson = File.ReadAllText(itemFile);
                     ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
 
-                    if (toDoItem?.UserId == userId && toDoItem.State == ToDoItemState.Active)
+                    if ((toDoItem != null) && (toDoItem.State == ToDoItemState.Active))
                     {
                         items.Add(toDoItem);
                     }
@@ -226,7 +274,8 @@ namespace Infrastructure.DataAccess
                 throw new DirectoryNotFoundException();
             }
 
-            if (!Directory.Exists(_repositoryDir))
+            string userDirectory = Path.Combine(_repositoryDir, userId.GetHashCode().ToString());
+            if (!Directory.Exists(userDirectory))
             {
                 return [];
             }
@@ -235,25 +284,21 @@ namespace Infrastructure.DataAccess
 
             await Task.Run(() =>
             {
-                _semaphore.Wait();
-                try
+                var itemFiles = Directory.EnumerateFiles(userDirectory);
+                foreach (var itemFile in itemFiles)
                 {
-                    var itemFiles = Directory.EnumerateFiles(_repositoryDir);
-                    foreach (var itemFile in itemFiles)
+                    if (cancelToken.IsCancellationRequested)
                     {
-                        string itemJson = File.ReadAllText(itemFile);
-
-                        ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
-
-                        if (toDoItem?.UserId == userId)
-                        {
-                            items.Add(toDoItem);
-                        }
+                        return;
                     }
-                }
-                finally
-                {
-                    _semaphore.Release();
+
+                    string itemJson = File.ReadAllText(itemFile);
+                    ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
+
+                    if (toDoItem != null)
+                    {
+                        items.Add(toDoItem);
+                    }
                 }
             });
 
@@ -265,9 +310,9 @@ namespace Infrastructure.DataAccess
             await Add(item, cancelToken);
         }
 
-        private string GetFileName(Guid id)
+        private string GetFileName(ToDoItem item)
         {
-            return Path.Combine(_repositoryDir, id.GetHashCode().ToString() + ".json");
+            return Path.Combine(_repositoryDir, item.UserId.GetHashCode().ToString(), item.Id.GetHashCode().ToString() + ".json");
         }
     }
 }
