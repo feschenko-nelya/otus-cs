@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using Core.DataAccess;
 using Core.Entity;
-using Telegram.Bot.Types;
 
 namespace HW2.Infrastructure.DataAccess
 {
@@ -32,6 +31,7 @@ namespace HW2.Infrastructure.DataAccess
                 StreamWriter wstream = File.CreateText(GetFileName(user.UserId));
                 wstream.Write(json);
                 wstream.Flush();
+                wstream.Close();
             });
         }
 
@@ -84,8 +84,7 @@ namespace HW2.Infrastructure.DataAccess
                         break;
                     }
 
-                    StreamReader rstream = File.OpenText(userFile);
-                    string userJson = rstream.ReadToEnd();
+                    string userJson = File.ReadAllText(userFile);
 
                     ToDoUser? toDoUser = JsonSerializer.Deserialize<ToDoUser>(userJson);
 
@@ -102,7 +101,7 @@ namespace HW2.Infrastructure.DataAccess
 
         private string GetFileName(Guid id)
         {
-            return Path.Combine(_repositoryDir, id.ToString(), ".json");
+            return Path.Combine(_repositoryDir, id.GetHashCode().ToString() + ".json");
         }
     }
 }

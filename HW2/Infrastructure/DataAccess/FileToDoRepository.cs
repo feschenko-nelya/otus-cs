@@ -7,6 +7,7 @@ namespace Infrastructure.DataAccess
     internal class FileToDoRepository : IToDoRepository
     {
         private string _repositoryDir = "items";
+        private SemaphoreSlim _semaphore = new SemaphoreSlim(3);
 
         public FileToDoRepository(string repositoryDir)
         {
@@ -32,6 +33,7 @@ namespace Infrastructure.DataAccess
                 StreamWriter wstream = File.CreateText(GetFileName(item.Id));
                 wstream.Write(json);
                 wstream.Flush();
+                wstream.Close();
             });
         }
 
@@ -54,9 +56,7 @@ namespace Infrastructure.DataAccess
                 var itemFiles = Directory.EnumerateFiles(_repositoryDir);
                 foreach (var itemFile in itemFiles)
                 {
-                    StreamReader rstream = File.OpenText(itemFile);
-                    string itemJson = rstream.ReadToEnd();
-
+                    string itemJson = File.ReadAllText(itemFile);
                     ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
 
                     if (toDoItem?.UserId == userId && toDoItem?.State == ToDoItemState.Active)
@@ -108,9 +108,7 @@ namespace Infrastructure.DataAccess
                 var itemFiles = Directory.EnumerateFiles(_repositoryDir);
                 foreach (var itemFile in itemFiles)
                 {
-                    StreamReader rstream = File.OpenText(itemFile);
-                    string itemJson = rstream.ReadToEnd();
-
+                    string itemJson = File.ReadAllText(itemFile);
                     ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
 
                     if (toDoItem?.UserId == userId && toDoItem?.Name == name)
@@ -143,9 +141,7 @@ namespace Infrastructure.DataAccess
                 var itemFiles = Directory.EnumerateFiles(_repositoryDir);
                 foreach (var itemFile in itemFiles)
                 {
-                    StreamReader rstream = File.OpenText(itemFile);
-                    string itemJson = rstream.ReadToEnd();
-
+                    string itemJson = File.ReadAllText(itemFile);
                     ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
 
                     if (toDoItem?.UserId == userId && predicate(toDoItem))
@@ -177,9 +173,7 @@ namespace Infrastructure.DataAccess
                 var itemFiles = Directory.EnumerateFiles(_repositoryDir);
                 foreach (var itemFile in itemFiles)
                 {
-                    StreamReader rstream = File.OpenText(itemFile);
-                    string itemJson = rstream.ReadToEnd();
-
+                    string itemJson = File.ReadAllText(itemFile);
                     ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
 
                     if (toDoItem?.Id == id)
@@ -212,9 +206,7 @@ namespace Infrastructure.DataAccess
                 var itemFiles = Directory.EnumerateFiles(_repositoryDir);
                 foreach (var itemFile in itemFiles)
                 {
-                    StreamReader rstream = File.OpenText(itemFile);
-                    string itemJson = rstream.ReadToEnd();
-
+                    string itemJson = File.ReadAllText(itemFile);
                     ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
 
                     if (toDoItem?.UserId == userId && toDoItem.State == ToDoItemState.Active)
@@ -243,18 +235,25 @@ namespace Infrastructure.DataAccess
 
             await Task.Run(() =>
             {
-                var itemFiles = Directory.EnumerateFiles(_repositoryDir);
-                foreach (var itemFile in itemFiles)
+                _semaphore.Wait();
+                try
                 {
-                    StreamReader rstream = File.OpenText(itemFile);
-                    string itemJson = rstream.ReadToEnd();
-
-                    ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
-
-                    if (toDoItem?.UserId == userId)
+                    var itemFiles = Directory.EnumerateFiles(_repositoryDir);
+                    foreach (var itemFile in itemFiles)
                     {
-                        items.Add(toDoItem);
+                        string itemJson = File.ReadAllText(itemFile);
+
+                        ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
+
+                        if (toDoItem?.UserId == userId)
+                        {
+                            items.Add(toDoItem);
+                        }
                     }
+                }
+                finally
+                {
+                    _semaphore.Release();
                 }
             });
 
@@ -268,7 +267,7 @@ namespace Infrastructure.DataAccess
 
         private string GetFileName(Guid id)
         {
-            return Path.Combine(_repositoryDir, id.ToString(), ".json");
+            return Path.Combine(_repositoryDir, id.GetHashCode().ToString() + ".json");
         }
     }
 }
