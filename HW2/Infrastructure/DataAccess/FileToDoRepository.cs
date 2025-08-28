@@ -1,17 +1,22 @@
 ﻿using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using Core.DataAccess;
 using Core.Entity;
+using HW2.Infrastructure;
 
 namespace Infrastructure.DataAccess
 {
     internal class FileToDoRepository : IToDoRepository
     {
         private string _repositoryDir = "items";
+        private UserItemIndex _userItemIndexFile = new();
 
         public FileToDoRepository(string repositoryDir)
         {
             _repositoryDir = repositoryDir;
+
+            FillIndexFile();
         }
 
         public async Task Add(ToDoItem item, CancellationToken cancelToken)
@@ -36,6 +41,8 @@ namespace Infrastructure.DataAccess
                 wstream.Write(json);
                 wstream.Flush();
                 wstream.Close();
+
+                _userItemIndexFile.Add(item.UserId, item.Id);
             });
         }
 
@@ -75,6 +82,7 @@ namespace Infrastructure.DataAccess
             }
 
             string itemFile = id.GetHashCode().ToString() + ".json";
+            int userHashCode = -1;
 
             await Task.Run( () =>
             {
@@ -91,9 +99,21 @@ namespace Infrastructure.DataAccess
                     if (fileInfo.Exists)
                     {
                         fileInfo.Delete();
+
+                        DirectoryInfo dirInfo = new(userDir);
+
+                        if (!int.TryParse(dirInfo.Name, out userHashCode))
+                            return;
+
+                        return;
                     }
                 }
             });
+
+            if (userHashCode > 0)
+            {
+                await _userItemIndexFile.Delete(userHashCode, id.GetHashCode(), cancelToken);
+            }
         }
 
         public async Task<bool> ExistsByName(Guid userId, string name, CancellationToken cancelToken)
@@ -308,6 +328,41 @@ namespace Infrastructure.DataAccess
         public async Task Update(ToDoItem item, CancellationToken cancelToken)
         {
             await Add(item, cancelToken);
+        }
+
+        private void FillIndexFile()
+        {
+            if (_userItemIndexFile.IsExist())
+                return;
+
+            var userDirs = Directory.GetDirectories(_repositoryDir);
+            if (userDirs.Length == 0)
+            {
+                return;
+            }
+
+            foreach (var userDir in userDirs)
+            {
+                DirectoryInfo dirInfo = new(userDir);
+
+                int userHashCode = -1;
+                if (!int.TryParse(dirInfo.Name, out userHashCode))
+                    continue;
+
+                var itemFiles = Directory.GetFiles(userDir);
+                foreach (var itemFile in itemFiles)
+                {
+                    FileInfo itemFileInfo = new(itemFile);
+
+                    int itemHashCode = -1;
+                    if (!int.TryParse(Path.GetFileNameWithoutExtension(itemFileInfo.Name), out itemHashCode))
+                        continue;
+
+                    _userItemIndexFile.Add(userHashCode, itemHashCode);
+                }
+            }
+
+
         }
 
         private string GetFileName(ToDoItem item)
