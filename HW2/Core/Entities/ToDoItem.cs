@@ -12,7 +12,7 @@
         public Guid UserId { get; set; }
         public string Name { get; init; }
         public DateTime CreatedAt { get; init; }
-        public ToDoItemState State { get; private set; }
+        public ToDoItemState State { get; set; }
         public DateTime? StateChangedAt { get; private set; }
 
         public ToDoItem(string name)

@@ -21,7 +21,7 @@ namespace Infrastructure.DataAccess
                 {
                     if (cancelToken.IsCancellationRequested)
                     {
-                        return 0; ;
+                        return 0;
                     }
 
                     if (item.State == ToDoItemState.Active)

@@ -1,12 +1,11 @@
 ﻿
 using Core.DataAccess;
+using HW2.Infrastructure.DataAccess;
 using Infrastructure.DataAccess;
 using Infrastructure.Services;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace HW2
 {
@@ -16,10 +15,10 @@ namespace HW2
         {
             using var cts = new CancellationTokenSource();
 
-            IUserRepository usersRepository = new InMemoryUserRepository();
+            IUserRepository usersRepository = new FileUserRepository("ToDoUsers");
             UserService userService = new(usersRepository);
 
-            IToDoRepository toDoRepository = new InMemoryToDoRepository();
+            IToDoRepository toDoRepository = new FileToDoRepository("ToDoItems");
             ToDoService toDoService = new(toDoRepository);
 
             var handler = new UpdateHandler(userService, toDoService);
@@ -29,7 +28,7 @@ namespace HW2
                 handler.OnStartedSubscribe(OnUpdateHandlerStart);
                 handler.OnCompletedSubscribe(OnUpdateHandlerComplete);
 
-                string? telegramBotToken = System.Environment.GetEnvironmentVariable("TELEGRAM_BOT_TOKEN");
+                string? telegramBotToken = Environment.GetEnvironmentVariable("TELEGRAM_BOT_TOKEN");
 
                 if (string.IsNullOrEmpty(telegramBotToken))
                 {
@@ -46,7 +45,7 @@ namespace HW2
                     DropPendingUpdates = true
                 };
 
-                await botClient.SetMyCommands(await handler.GetBotCommands(-1, cts.Token));
+                await botClient.SetMyCommands(handler.GetBotCommands(-1, cts.Token));
 
                 botClient.StartReceiving(handler, receiverOptions: receiverOptions, cancellationToken: cts.Token);
 

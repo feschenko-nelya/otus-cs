@@ -221,7 +221,7 @@ namespace HW2
             }
             else
             {
-                await botClient.SetMyCommands(await GetBotCommands(botMessage.From.Id, ct));
+                await botClient.SetMyCommands(GetBotCommands(botMessage.From.Id, ct));
 
                 var keyboard = await GetReplyKeyboardMarkup(botMessage.From.Id, ct);
 
@@ -251,8 +251,8 @@ namespace HW2
                                     || c.code == "/report"
                                 );
 
-            ReplyKeyboardMarkup keayboard = new();
-            keayboard.ResizeKeyboard = true;
+            ReplyKeyboardMarkup keyboard = new();
+            keyboard.ResizeKeyboard = true;
 
             foreach (CommandData command in replyCommands)
             {
@@ -261,24 +261,24 @@ namespace HW2
                     continue;
                 }
 
-                keayboard.AddNewRow(new KeyboardButton(command.code));
+                keyboard.AddNewRow(new KeyboardButton(command.code));
             }
 
             if (replyCommands.Count == 0)
             {
-                keayboard.AddButton("/start");
+                keyboard.AddButton("/start");
             }
             
-            return keayboard;
+            return keyboard;
         }
 
-        public async Task<List<BotCommand>> GetBotCommands(long telegramUserId, CancellationToken ct)
+        public List<BotCommand> GetBotCommands(long telegramUserId, CancellationToken ct)
         {
             List<BotCommand> botCommands = new();
             
             foreach (CommandData command in _commands)
             {
-                if (command.isUsers && !await IsEnabled(telegramUserId, ct))
+                if (command.isUsers && !IsEnabled(telegramUserId, ct).Result)
                 {
                     continue;
                 }

@@ -51,6 +51,7 @@ namespace Infrastructure.Services
             }
 
             item.SetCompleted();
+            ToDoRepository?.Update(item, cancelToken);
 
             return true;
         }
