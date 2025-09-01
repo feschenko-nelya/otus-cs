@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Text;
-using System.Windows.Input;
+﻿using System.Text;
 using Core.Entity;
 using Core.Services;
+using HW2.TelegramBot.Scenario;
+using HW2.TelegramBot.Scenarios;
 using Infrastructure.DataAccess;
 using Infrastructure.Services;
 using Telegram.Bot;
@@ -17,6 +17,8 @@ namespace HW2
     {
         private readonly IUserService _userService;
         private readonly IToDoService _toDoService;
+        private readonly IEnumerable<IScenario> _scenarios;
+        private readonly IScenarioContextRepository _contextRepository;
 
         private static readonly Version _version = new Version(1, 0);
         private static readonly DateTime _creationDate = new DateTime(2025, 3, 27);
@@ -44,10 +46,12 @@ namespace HW2
         event MessageEventHandler OnHandleUpdateStarted = delegate { };
         event MessageEventHandler OnHandleUpdateCompleted = delegate { };
 
-        public UpdateHandler(IUserService userService, IToDoService toDoService)
+        public UpdateHandler(IUserService userService, IToDoService toDoService, IEnumerable<IScenario> scenarios, IScenarioContextRepository contextRepository)
         {
             _userService = userService;
             _toDoService = toDoService;
+            _scenarios = scenarios;
+            _contextRepository = contextRepository;
 
             _commands.Add(new CommandData("/start", 
                                           StartCommand, 
@@ -127,7 +131,7 @@ namespace HW2
                 {
                 case UpdateType.Message:
                 {
-                    await BotOnMessageReceived(botClient, botMessage, ct);
+                    await BotOnMessageReceived(botClient, botMessage, update, ct);
                     return;
                 }
                 }
@@ -138,11 +142,21 @@ namespace HW2
             }
         }
 
-        private async Task BotOnMessageReceived(ITelegramBotClient botClient, Message botMessage, CancellationToken ct)
+        private async Task BotOnMessageReceived(ITelegramBotClient botClient, Message botMessage, Update update, CancellationToken ct)
         {
             if (botMessage.Type != MessageType.Text)
             {
                 return;
+            }
+
+            if (botMessage.From != null)
+            {
+                ScenarioContext? scenarioContext = await _contextRepository.GetContext(botMessage.From.Id, ct);
+                if (scenarioContext != null)
+                {
+                    await ProcessScenario(botClient, scenarioContext, update, ct);
+                    return;
+                }
             }
 
             string? botMessageText = botMessage.Text;
@@ -709,6 +723,31 @@ namespace HW2
             }
 
             return str.ToString();
+        }
+
+        public IScenario GetScenario(ScenarioType scenario)
+        {
+            throw new Exception($"Сценарий с типом '{scenario.ToString()}' не найден.");
+        }
+
+        public async Task ProcessScenario(ITelegramBotClient botClient, ScenarioContext context, Update update, CancellationToken ct)
+        {
+            IScenario? scenario = GetScenario(context.CurrentScenario);
+            if (scenario == null)
+            {
+                return;
+            }
+
+            ScenarioResult scenarioResult = await scenario.HandleMessageAsync(botClient, context, update, ct);
+
+            if (scenarioResult == ScenarioResult.Completed)
+            {
+                await _contextRepository.ResetContext(context.UserId, ct);
+            }
+            else
+            {
+                await _contextRepository.SetContext(context.UserId, context, ct);
+            }
         }
     }
 }

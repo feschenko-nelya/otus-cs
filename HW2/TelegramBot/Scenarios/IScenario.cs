@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using HW2.TelegramBot.Scenario;
+﻿using HW2.TelegramBot.Scenario;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
