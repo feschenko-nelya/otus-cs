@@ -1,4 +1,6 @@
-﻿namespace HW2.TelegramBot.Scenario
+﻿using Core.Entity;
+
+namespace HW2.TelegramBot.Scenario
 {
     public enum ScenarioType
     {
@@ -13,7 +15,7 @@
         //Текущий шаг сценария
         internal string? CurrentStep = null;
         //Дополнительная инфрмация, необходимая для работы сценария
-        internal Dictionary<string, object> Data = new();
+        internal Dictionary<string, ToDoUser> Data = new();
 
         internal ScenarioContext(ScenarioType scenario)
         {
