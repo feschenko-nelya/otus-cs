@@ -29,7 +29,7 @@ namespace HW2.TelegramBot.Scenarios
                     ToDoUser? toDoUser = await _userService.GetUser(context.UserId, ct);
                     if (toDoUser != null && update.Message != null)
                     {
-                        context.Data.Add(toDoUser.TelegramUserName, toDoUser);
+                        context.Data.Add(toDoUser.TelegramUserId.ToString(), toDoUser);
                         await bot.SendMessage(update.Message.Chat.Id, "Введите название задачи:", cancellationToken: ct);
                         context.CurrentStep = "Name";
 
@@ -41,15 +41,62 @@ namespace HW2.TelegramBot.Scenarios
                 {
                     if (update.Message != null && update.Message.From != null && update.Message.From.Username != null)
                     {
-                        ToDoUser? toDoUser = null;
-                        context.Data.TryGetValue(update.Message.From.Username, out toDoUser);
+                        object? toDoUserObject = null;
+                        context.Data.TryGetValue(update.Message.From.Id.ToString(), out toDoUserObject);
 
-                        if (toDoUser != null)
+                        if (toDoUserObject != null)
                         {
-                            await _toDoService.Add(toDoUser.UserId, update.Message.Text, ct);
-
-                            return ScenarioResult.Completed;
+                            ToDoUser? toDoUser = (ToDoUser)toDoUserObject;
+                            if (toDoUser != null)
+                            {
+                                ToDoItem newToDoItem = await _toDoService.Add(toDoUser.UserId, update.Message.Text, null, ct);
+                                context.Data.Add(newToDoItem.Id.ToString(), newToDoItem);
+                                await bot.SendMessage(update.Message.Chat.Id, "Введите срок задачи (dd.MM.yyyy):", cancellationToken: ct);
+                                context.CurrentStep = "Deadline";
+                                return ScenarioResult.Transition;
+                            }
                         }
+                    }
+                    break;
+                }
+                case "Deadline":
+                {
+                    if (update.Message != null && update.Message.From != null && update.Message.From.Username != null)
+                    {
+                        object? toDoUserObject = null;
+                        context.Data.TryGetValue(update.Message.From.Username, out toDoUserObject);
+
+                        if (toDoUserObject == null)
+                            break;
+                        
+                        ToDoUser? toDoUser = (ToDoUser)toDoUserObject;
+                        if (toDoUser == null)
+                            break;
+
+                        object? toDoItemObject = null;
+                        context.Data.TryGetValue(update.Message.From.Username, out toDoItemObject);
+
+                        ToDoItem? toDoItem = (ToDoItem)toDoItemObject;
+                        if (toDoItem == null)
+                            break;
+
+                        DateTime? deadline = null;
+                        try
+                        {
+                            DateTime.ParseExact(update.Message.Text, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
+                        }
+                        catch
+                        {
+                            await bot.SendMessage(update.Message.Chat.Id, "Дата введена неверно. Введите срок задачи (dd.MM.yyyy):", cancellationToken: ct);
+                            context.CurrentStep = "Deadline";
+                            return ScenarioResult.Transition;
+                        }
+
+                        await _toDoService.Delete(toDoUser.UserId, toDoItem.Id, ct);
+                        await _toDoService.Add(toDoUser.UserId, toDoItem.Name, deadline, ct);
+
+                        return ScenarioResult.Completed;
+                        
                     }
                     break;
                 }

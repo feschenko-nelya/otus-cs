@@ -415,7 +415,7 @@ namespace HW2
 
             string commandName = string.Join(" ", args);
 
-            ToDoItem? newItem = await _toDoService.Add(user.obj.UserId, string.Join(" ", args), ct);
+            ToDoItem? newItem = await _toDoService.Add(user.obj.UserId, string.Join(" ", args), null, ct);
             if (newItem != null)
             {
                 await botClient.SendMessage(botMessage.Chat, $"Задача '{newItem.Name}' добавлена.", cancellationToken: ct);
