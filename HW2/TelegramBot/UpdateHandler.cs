@@ -103,6 +103,10 @@ namespace HW2
                                           UserItemsFindCommand,
                                           "Все задачи пользователя, которые начинаются на введенный текст.",
                                           true));
+            _commands.Add(new CommandData("/cancel",
+                                          CancelCommand,
+                                          "Для остановки сценариев.",
+                                          true));
         }
 
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken ct)
@@ -743,6 +747,35 @@ namespace HW2
             var userCommands = await _toDoService.Find(user.obj, string.Join(" ", commandArgs), ct);
 
             await botClient.SendMessage(botMessage.Chat, GetToDoItemsStringList(userCommands), cancellationToken: ct);
+        }
+        private async Task CancelCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
+        {
+            if (update == null)
+                return;
+            if (update.Message == null)
+                return;
+            if (update.Message.From == null)
+                return;
+            
+            await _contextRepository.ResetContext(update.Message.From.Id, ct);
+
+            await botClient.SendMessage(update.Message.Chat, "", cancellationToken: ct,
+                replyMarkup: new ReplyKeyboardMarkup
+                {
+                    ResizeKeyboard = true,
+                    Keyboard = [[new KeyboardButton("/cancel")]]
+                }
+                );
+
+            ScenarioContext? scenarioContext = await _contextRepository.GetContext(update.Message.From.Id, ct);
+            if (scenarioContext != null)
+            {
+                await ProcessScenario(botClient, scenarioContext, update, ct);
+            }
+
+            await botClient.SendMessage(update.Message.Chat, "", cancellationToken: ct,
+                                        replyMarkup: await GetReplyKeyboardMarkup(update.Message.From.Id, ct));
+            
         }
         private List<string> GetCommandArguments(string line)
         {
