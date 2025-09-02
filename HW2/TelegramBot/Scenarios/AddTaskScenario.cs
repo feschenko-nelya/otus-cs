@@ -62,7 +62,7 @@ namespace HW2.TelegramBot.Scenarios
                     if (toDoUser == null)
                         break;
                             
-                    ToDoItem newToDoItem = await _toDoService.Add(toDoUser.UserId, update.Message.Text, null, ct);
+                    ToDoItem newToDoItem = await _toDoService.Add(toDoUser.UserId, update.Message.Text, null, null, ct);
                     context.Data[update.Message.From.Id.ToString()] = newToDoItem;
 
                     await bot.SendMessage(update.Message.Chat.Id, "Введите срок задачи (dd.MM.yyyy):", cancellationToken: ct);
@@ -98,7 +98,7 @@ namespace HW2.TelegramBot.Scenarios
                     }
 
                     await _toDoService.Delete(toDoItem.UserId, toDoItem.Id, ct);
-                    await _toDoService.Add(toDoItem.UserId, toDoItem.Name, deadline, ct);
+                    await _toDoService.Add(toDoItem.UserId, toDoItem.Name, deadline, null, ct);
 
                     await bot.SendMessage(update.Message.Chat.Id, $"Задача {toDoItem.Name} добавлена", cancellationToken: ct);
 

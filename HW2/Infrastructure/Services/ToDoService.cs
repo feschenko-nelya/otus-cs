@@ -1,6 +1,7 @@
-﻿using Core.Services;
-using Core.DataAccess;
+﻿using Core.DataAccess;
 using Core.Entity;
+using Core.Services;
+using HW2.Core.Entities;
 
 namespace Infrastructure.Services
 {
@@ -56,7 +57,7 @@ namespace Infrastructure.Services
             return true;
         }
 
-        public async Task<ToDoItem> Add(Guid userId, string name, DateTime? deadline, CancellationToken cancelToken)
+        public async Task<ToDoItem> Add(Guid userId, string name, DateTime? deadline, ToDoList? list, CancellationToken cancelToken)
         {
             ItemLimit userItemLimit = GetUserItemLimit(userId);
 

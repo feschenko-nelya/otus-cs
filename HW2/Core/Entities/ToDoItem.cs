@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using HW2.Core.Entities;
 
 namespace Core.Entity
 {
@@ -17,6 +18,7 @@ namespace Core.Entity
         public ToDoItemState State { get; set; }
         public DateTime? StateChangedAt { get; private set; }
         public DateTime? Deadline { get; set; }
+        private ToDoList? List { get; }
 
         public ToDoItem(string name)
         {
