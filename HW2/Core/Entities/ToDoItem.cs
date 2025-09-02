@@ -1,4 +1,6 @@
-﻿namespace Core.Entity
+﻿using System.Text;
+
+namespace Core.Entity
 {
     public enum ToDoItemState 
     { 
@@ -31,7 +33,20 @@
         }
         public override string ToString()
         {
-            return $"{Name} - {CreatedAt.ToString("dd.MM.yyyy HH:mm:ss")} - '{Id}'";
+            StringBuilder strb = new();
+            strb.Append(Name);
+            strb.Append(" - cr: ");
+            strb.Append(CreatedAt.ToString("dd.MM.yyyy HH:mm:ss"));
+            strb.Append(" - ");
+            strb.Append(Id.ToString());
+
+            if (Deadline != null)
+            {
+                strb.Append(" - dl: ");
+                strb.Append(Deadline?.ToString("dd.MM.yyyy"));
+            }
+
+            return strb.ToString();
         }
 
         public string GetStateName()

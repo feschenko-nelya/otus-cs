@@ -164,14 +164,14 @@ namespace HW2
                 return;
             }
 
-            if (botMessage.From != null)
+            if (botMessage.From == null)
+                return;
+
+            ScenarioContext? scenarioContext = await _contextRepository.GetContext(botMessage.From.Id, ct);
+            if (scenarioContext != null)
             {
-                ScenarioContext? scenarioContext = await _contextRepository.GetContext(botMessage.From.Id, ct);
-                if (scenarioContext != null)
-                {
-                    await ProcessScenario(botClient, scenarioContext, update, ct);
-                    return;
-                }
+                await ProcessScenario(botClient, scenarioContext, update, ct);
+                return;
             }
 
             string? botMessageText = botMessage.Text;
@@ -402,28 +402,28 @@ namespace HW2
                 return;
             }
 
-            ScenarioContext addScenario = new(ScenarioType.AddTask);
+            ScenarioContext addScenario = new(ScenarioType.AddTask, user.obj.TelegramUserId);
             await ProcessScenario(botClient, addScenario, update, ct);
 
-            List<string> args = GetCommandArguments(botMessage.Text);
+            //List<string> args = GetCommandArguments(botMessage.Text);
 
-            if (args.Count == 0)
-            {
-                await botClient.SendMessage(botMessage.Chat, "Введите название задачи.", cancellationToken: ct);
-                return;
-            }
+            //if (args.Count == 0)
+            //{
+            //    await botClient.SendMessage(botMessage.Chat, "Введите название задачи.", cancellationToken: ct);
+            //    return;
+            //}
 
-            string commandName = string.Join(" ", args);
+            //string commandName = string.Join(" ", args);
 
-            ToDoItem? newItem = await _toDoService.Add(user.obj.UserId, string.Join(" ", args), null, ct);
-            if (newItem != null)
-            {
-                await botClient.SendMessage(botMessage.Chat, $"Задача '{newItem.Name}' добавлена.", cancellationToken: ct);
-            }
-            else
-            {
-                await botClient.SendMessage(botMessage.Chat, "Задача не добавлена.", cancellationToken: ct);
-            }
+            //ToDoItem? newItem = await _toDoService.Add(user.obj.UserId, string.Join(" ", args), null, ct);
+            //if (newItem != null)
+            //{
+            //    await botClient.SendMessage(botMessage.Chat, $"Задача '{newItem.Name}' добавлена.", cancellationToken: ct);
+            //}
+            //else
+            //{
+            //    await botClient.SendMessage(botMessage.Chat, "Задача не добавлена.", cancellationToken: ct);
+            //}
         }
         private async Task UserItemsCompleteCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
@@ -864,9 +864,17 @@ namespace HW2
             return str.ToString();
         }
 
-        public IScenario GetScenario(ScenarioType scenario)
+        public IScenario? GetScenario(ScenarioType scenarioType)
         {
-            throw new Exception($"Сценарий с типом '{scenario.ToString()}' не найден.");
+            foreach (var scenario in _scenarios)
+            {
+                if (scenario.CanHandle(scenarioType))
+                {
+                    return scenario;
+                }
+            }
+
+            return null;
         }
 
         public async Task ProcessScenario(ITelegramBotClient botClient, ScenarioContext context, Update update, CancellationToken ct)

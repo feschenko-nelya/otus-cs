@@ -24,7 +24,7 @@ namespace HW2.TelegramBot.Scenario
 
         public Task SetContext(long userId, ScenarioContext context, CancellationToken ct)
         {
-            _scenarios.Add(userId, context);
+            _scenarios[userId] = context;
 
             return Task.CompletedTask;
         }
