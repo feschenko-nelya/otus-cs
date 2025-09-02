@@ -167,19 +167,13 @@ namespace HW2
             if (botMessage.From == null)
                 return;
 
-            ScenarioContext? scenarioContext = await _contextRepository.GetContext(botMessage.From.Id, ct);
-            if (scenarioContext != null)
-            {
-                await ProcessScenario(botClient, scenarioContext, update, ct);
-                return;
-            }
-
             string? botMessageText = botMessage.Text;
 
             if (string.IsNullOrEmpty(botMessageText))
             {
                 return;
             }
+
             OnHandleUpdateStarted.Invoke(botMessageText);
 
             if (string.IsNullOrEmpty(botMessageText))
@@ -190,6 +184,19 @@ namespace HW2
 
             string[] args = botMessageText.Split(' ');
             CommandData command = _commands.Find(command => command.code == args[0]);
+
+            if (command.code == "/cancel")
+            {
+                await CancelCommand(botClient, update, ct);
+                return;
+            }
+
+            ScenarioContext? scenarioContext = await _contextRepository.GetContext(botMessage.From.Id, ct);
+            if (scenarioContext != null)
+            {
+                await ProcessScenario(botClient, scenarioContext, update, ct);
+                return;
+            }
 
             if (command.Equals(default(CommandData)))
             {
@@ -404,26 +411,6 @@ namespace HW2
 
             ScenarioContext addScenario = new(ScenarioType.AddTask, user.obj.TelegramUserId);
             await ProcessScenario(botClient, addScenario, update, ct);
-
-            //List<string> args = GetCommandArguments(botMessage.Text);
-
-            //if (args.Count == 0)
-            //{
-            //    await botClient.SendMessage(botMessage.Chat, "Введите название задачи.", cancellationToken: ct);
-            //    return;
-            //}
-
-            //string commandName = string.Join(" ", args);
-
-            //ToDoItem? newItem = await _toDoService.Add(user.obj.UserId, string.Join(" ", args), null, ct);
-            //if (newItem != null)
-            //{
-            //    await botClient.SendMessage(botMessage.Chat, $"Задача '{newItem.Name}' добавлена.", cancellationToken: ct);
-            //}
-            //else
-            //{
-            //    await botClient.SendMessage(botMessage.Chat, "Задача не добавлена.", cancellationToken: ct);
-            //}
         }
         private async Task UserItemsCompleteCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
@@ -730,7 +717,7 @@ namespace HW2
             if (update == null)
                 return;
 
-            Message botMessage = update.Message;
+            Message? botMessage = update.Message;
             if (botMessage == null)
                 return;
 
@@ -752,30 +739,19 @@ namespace HW2
         {
             if (update == null)
                 return;
-            if (update.Message == null)
+
+            Message? botMessage = update.Message;
+            if (botMessage == null)
                 return;
-            if (update.Message.From == null)
+
+            User? botUser = botMessage.From;
+            if (botUser == null)
                 return;
             
-            await _contextRepository.ResetContext(update.Message.From.Id, ct);
+            await _contextRepository.ResetContext(botUser.Id, ct);
 
-            await botClient.SendMessage(update.Message.Chat, "", cancellationToken: ct,
-                replyMarkup: new ReplyKeyboardMarkup
-                {
-                    ResizeKeyboard = true,
-                    Keyboard = [[new KeyboardButton("/cancel")]]
-                }
-                );
-
-            ScenarioContext? scenarioContext = await _contextRepository.GetContext(update.Message.From.Id, ct);
-            if (scenarioContext != null)
-            {
-                await ProcessScenario(botClient, scenarioContext, update, ct);
-            }
-
-            await botClient.SendMessage(update.Message.Chat, "", cancellationToken: ct,
-                                        replyMarkup: await GetReplyKeyboardMarkup(update.Message.From.Id, ct));
-            
+            await botClient.SendMessage(botMessage.Chat, "Команда отменена", cancellationToken: ct,
+                                        replyMarkup: await GetReplyKeyboardMarkup(botUser.Id, ct));
         }
         private List<string> GetCommandArguments(string line)
         {
@@ -881,15 +857,24 @@ namespace HW2
         {
             IScenario? scenario = GetScenario(context.CurrentScenario);
             if (scenario == null)
-            {
                 return;
-            }
 
             ScenarioResult scenarioResult = await scenario.HandleMessageAsync(botClient, context, update, ct);
+
+            Message? botMessage = update.Message;
+            if (botMessage == null)
+                return;
 
             if (scenarioResult == ScenarioResult.Completed)
             {
                 await _contextRepository.ResetContext(context.UserId, ct);
+
+                User? botUser = botMessage.From;
+                if (botUser == null)
+                    return;
+
+                await botClient.SendMessage(botMessage.Chat, "Команда завершена", cancellationToken: ct,
+                                        replyMarkup: await GetReplyKeyboardMarkup(botUser.Id, ct));
             }
             else
             {

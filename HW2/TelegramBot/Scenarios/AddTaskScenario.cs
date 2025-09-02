@@ -3,6 +3,7 @@ using Core.Services;
 using HW2.TelegramBot.Scenario;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace HW2.TelegramBot.Scenarios
 {
@@ -29,8 +30,17 @@ namespace HW2.TelegramBot.Scenarios
                     ToDoUser? toDoUser = await _userService.GetUser(context.UserId, ct);
                     if (toDoUser != null && update.Message != null)
                     {
+                        ReplyKeyboardMarkup cancelKeyboard = new();
+                        cancelKeyboard.ResizeKeyboard = true;
+                        cancelKeyboard.Keyboard = [[new KeyboardButton("/cancel")]];
+
                         context.Data[toDoUser.TelegramUserId.ToString()] = toDoUser;
-                        await bot.SendMessage(update.Message.Chat.Id, "Введите название задачи:", cancellationToken: ct);
+                        
+                        await bot.SendMessage(update.Message.Chat.Id, 
+                                              "Введите название задачи:", 
+                                              cancellationToken: ct,
+                                              replyMarkup: cancelKeyboard);
+                        
                         context.CurrentStep = "Name";
 
                         return ScenarioResult.Transition;
