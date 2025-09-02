@@ -1,14 +1,15 @@
 ﻿
+using System.Runtime.Serialization;
 using Core.Entity;
 
 namespace HW2.Core.Entities
 {
     public class ToDoList
     {
-        Guid Id { get; init; }
-        string? Name { get; set; }
-        ToDoUser User { get; init; }
-        DateTime CreatedAt { get; init; }
+        public Guid Id { get; init; }
+        public string? Name { get; set; }
+        public ToDoUser User { get; init; }
+        public DateTime CreatedAt { get; init; }
 
         public ToDoList(ToDoUser toDoUser)
         {
