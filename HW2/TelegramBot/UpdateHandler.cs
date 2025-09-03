@@ -200,6 +200,11 @@ namespace HW2
 
                 await botClient.SendMessage(botMessage.Chat, str.ToString(), cancellationToken: ct);
             }
+            else if (commonCallback.Action == "addlist")
+            {
+                ScenarioContext addScenario = new(ScenarioType.AddList, user.Id);
+                await ProcessScenario(botClient, addScenario, update, ct);
+            }
         }
 
         private async Task BotOnMessageReceived(ITelegramBotClient botClient, Update update, CancellationToken ct)
@@ -884,20 +889,26 @@ namespace HW2
 
             ScenarioResult scenarioResult = await scenario.HandleMessageAsync(botClient, context, update, ct);
 
-            Message? botMessage = update.Message;
-            if (botMessage == null)
-                return;
+            Chat? chat = null;
+
+            if (update.Message != null)
+            {
+                chat = update.Message.Chat;
+            }
+            else if (update.CallbackQuery != null)
+            {
+                chat = update.CallbackQuery.Message?.Chat;
+            }
+
+            if (chat == null)
+                throw new Exception("Чат не обнаружен.");
 
             if (scenarioResult == ScenarioResult.Completed)
             {
                 await _contextRepository.ResetContext(context.UserId, ct);
 
-                User? botUser = botMessage.From;
-                if (botUser == null)
-                    return;
-
-                await botClient.SendMessage(botMessage.Chat, "Команда завершена", cancellationToken: ct,
-                                        replyMarkup: await GetReplyKeyboardMarkup(botUser.Id, ct));
+                await botClient.SendMessage(chat, "Команда завершена", cancellationToken: ct,
+                                        replyMarkup: await GetReplyKeyboardMarkup(context.UserId, ct));
             }
             else
             {

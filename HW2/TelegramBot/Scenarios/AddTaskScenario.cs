@@ -71,7 +71,7 @@ namespace HW2.TelegramBot.Scenarios
                     DateTime? deadline = null;
                     try
                     {
-                            deadline = DateTime.ParseExact(update.Message.Text, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
+                        deadline = DateTime.ParseExact(update.Message.Text, "dd.MM.yyyy", System.Globalization.CultureInfo.InvariantCulture);
                     }
                     catch
                     {
@@ -88,7 +88,7 @@ namespace HW2.TelegramBot.Scenarios
                     if (toDoUser == null)
                         throw new Exception("Объект пользователя не найден.");
 
-                    await _toDoService.Add(toDoUser.UserId, toDoItemName, deadline, ct);
+                    await _toDoService.Add(toDoUser.UserId, toDoItemName, deadline, null, ct);
 
                     await bot.SendMessage(update.Message.Chat.Id, $"Задача {toDoItemName} добавлена", cancellationToken: ct);
 

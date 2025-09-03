@@ -29,7 +29,8 @@ namespace HW2
             IToDoListRepository toDoListRepository = new FileToDoListRepository("ToDoLists");
             IToDoListService toDoListService = new ToDoListService(toDoListRepository);
 
-            IEnumerable<IScenario> scenarios = [new AddTaskScenario(userService, toDoService)];
+            IEnumerable<IScenario> scenarios = [new AddTaskScenario(userService, toDoService),
+                                                new AddListScenario(userService, toDoListService)];
             IScenarioContextRepository contextRepository = new InMemoryScenarioContextRepository();
 
             var handler = new UpdateHandler(userService, toDoService, toDoListService, scenarios, contextRepository);
