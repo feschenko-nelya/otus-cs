@@ -119,17 +119,14 @@ namespace HW2
                 return;
             }
 
-            Message botMessage = update.Message;
-            
-            if (botMessage is null)
-            {
-                return;
-            }
-
             try
             {
                 if (ct.IsCancellationRequested)
                 {
+                    Message botMessage = update.Message;
+                    if (botMessage is null)
+                        return;
+
                     await botClient.SendMessage(botMessage.Chat, "", 
                                                 replyMarkup: new ReplyKeyboardRemove());
                 }
@@ -141,11 +138,67 @@ namespace HW2
                     await BotOnMessageReceived(botClient, update, ct);
                     return;
                 }
+                case UpdateType.CallbackQuery:
+                {
+                    await OnCallbackQuery(botClient, update, ct);
+                    return;
+                }
                 }
             }
             catch (Exception exception)
             {
                 await HandleErrorAsync(botClient, exception, HandleErrorSource.FatalError, ct);
+            }
+        }
+
+        private async Task OnCallbackQuery(ITelegramBotClient botClient, Update update, CancellationToken ct)
+        {
+            if (update == null)
+                return;
+
+            var query = update.CallbackQuery;
+            if (query == null)
+                return;
+
+            await botClient.AnswerCallbackQuery(query.Id, "");
+
+            if (string.IsNullOrEmpty(query.Data))
+                return;
+
+            User? user = query.From;
+            if (user == null)
+                return;
+
+            if (!await IsEnabled(user.Id, ct))
+                return;
+
+            var commonCallback = CallbackDto.FromString(query.Data);
+
+            if (commonCallback.Action == "show")
+            {
+                ToDoUser? toDoUser = await _userService.GetUser(user.Id, ct);
+                if (toDoUser == null)
+                    return;
+
+                var toDoListCallback = ToDoListCallbackDto.FromString(query.Data);
+
+                var items = await _toDoService.GetByUserIdAndList(toDoUser.UserId, toDoListCallback.ToDoListId, ct);
+
+                StringBuilder str = new();
+                for (int i = 0; i < items.Count; ++i)
+                {
+                    ToDoItem item = items.ElementAt(i);
+                    if (item != null)
+                    {
+                        str.AppendLine($"{i + 1}. {item.ToString()}");
+                    }
+                }
+
+                Message? botMessage = query.Message;
+                if (botMessage == null)
+                    return;
+
+                await botClient.SendMessage(botMessage.Chat, str.ToString(), cancellationToken: ct);
             }
         }
 
@@ -613,14 +666,15 @@ namespace HW2
             }
 
             await botClient.SendMessage(botMessage.Chat, "Выберите список", cancellationToken: ct,
-                replyMarkup: new InlineKeyboardMarkup
-                {
-                    InlineKeyboard = [
-                                        [InlineKeyboardButton.WithCallbackData("Без списка", "show"), InlineKeyboardButton.WithCallbackData("Со списком", "show|id")],
-                                        [InlineKeyboardButton.WithCallbackData("Добавить", "addlist"), InlineKeyboardButton.WithCallbackData("Удалить", "deletelist")]
-                                     ]
-
-                });
+                                        replyMarkup: new InlineKeyboardMarkup
+                                        {
+                                            InlineKeyboard = [
+                                                                [InlineKeyboardButton.WithCallbackData("Без списка", "show|null"), 
+                                                                 InlineKeyboardButton.WithCallbackData("Со списком", "show|id")],
+                                                                [InlineKeyboardButton.WithCallbackData("Добавить", "addlist"), 
+                                                                 InlineKeyboardButton.WithCallbackData("Удалить", "deletelist")]
+                                                             ]
+                                        });
         }
         public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource errorSource, CancellationToken ct)
         {

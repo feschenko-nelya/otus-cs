@@ -52,7 +52,7 @@ namespace HW2
 
                 var receiverOptions = new ReceiverOptions
                 {
-                    AllowedUpdates = [UpdateType.Message],
+                    AllowedUpdates = [UpdateType.Message, UpdateType.CallbackQuery],
                     DropPendingUpdates = true
                 };
 
