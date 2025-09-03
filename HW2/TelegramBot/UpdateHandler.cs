@@ -674,10 +674,10 @@ namespace HW2
                                         replyMarkup: new InlineKeyboardMarkup
                                         {
                                             InlineKeyboard = [
-                                                                [InlineKeyboardButton.WithCallbackData("Без списка", "show|null"), 
-                                                                 InlineKeyboardButton.WithCallbackData("Со списком", "show|id")],
-                                                                [InlineKeyboardButton.WithCallbackData("Добавить", "addlist"), 
-                                                                 InlineKeyboardButton.WithCallbackData("Удалить", "deletelist")]
+                                                                [InlineKeyboardButton.WithCallbackData("\u2754 Без списка", "show|null"), 
+                                                                 InlineKeyboardButton.WithCallbackData("\u2728 Со списком", "show|id")],
+                                                                [InlineKeyboardButton.WithCallbackData("\u2795 Добавить", "addlist"), 
+                                                                 InlineKeyboardButton.WithCallbackData("\u274C Удалить", "deletelist")]
                                                              ]
                                         });
         }
