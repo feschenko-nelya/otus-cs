@@ -27,62 +27,45 @@ namespace HW2.TelegramBot.Scenarios
             {
                 case null:
                 {
-                    ToDoUser? toDoUser = await _userService.GetUser(context.UserId, ct);
-                    if (toDoUser != null && update.Message != null)
-                    {
-                        ReplyKeyboardMarkup cancelKeyboard = new();
-                        cancelKeyboard.ResizeKeyboard = true;
-                        cancelKeyboard.Keyboard = [[new KeyboardButton("/cancel")]];
+                    if (update.Message == null)
+                        break;
 
-                        context.Data[toDoUser.TelegramUserId.ToString()] = toDoUser;
+                    ReplyKeyboardMarkup cancelKeyboard = new();
+                    cancelKeyboard.ResizeKeyboard = true;
+                    cancelKeyboard.Keyboard = [[new KeyboardButton("/cancel")]];
                         
-                        await bot.SendMessage(update.Message.Chat.Id, 
-                                              "Введите название задачи:", 
-                                              cancellationToken: ct,
-                                              replyMarkup: cancelKeyboard);
+                    await bot.SendMessage(update.Message.Chat.Id, 
+                                            "Введите название задачи:", 
+                                            cancellationToken: ct,
+                                            replyMarkup: cancelKeyboard);
                         
-                        context.CurrentStep = "Name";
+                    context.CurrentStep = "Name";
 
-                        return ScenarioResult.Transition;
-                    }
-                    break;
+                    return ScenarioResult.Transition;
                 }
                 case "Name":
                 {
-                    if (update.Message == null || update.Message.From == null || update.Message.From.Username == null)
-                        break;
-                    
-                    object? toDoUserObject = null;
-                    context.Data.TryGetValue(update.Message.From.Id.ToString(), out toDoUserObject);
-
-                    if (toDoUserObject == null)
+                    Message? botMessage = update.Message;
+                    if (botMessage == null || botMessage.From == null || botMessage.From.Username == null)
                         break;
 
-                    ToDoUser? toDoUser = (ToDoUser)toDoUserObject;
-                    if (toDoUser == null)
-                        break;
-                            
-                    ToDoItem newToDoItem = await _toDoService.Add(toDoUser.UserId, update.Message.Text, null, null, ct);
-                    context.Data[update.Message.From.Id.ToString()] = newToDoItem;
+                    if (string.IsNullOrEmpty(botMessage.Text))
+                    {
+                        context.CurrentStep = null;
+                        return ScenarioResult.Transition;
+                    }
 
-                    await bot.SendMessage(update.Message.Chat.Id, "Введите срок задачи (dd.MM.yyyy):", cancellationToken: ct);
+                    context.Data[context.CurrentStep] = botMessage.Text;
+
+                    await bot.SendMessage(botMessage.Chat.Id, "Введите срок задачи (dd.MM.yyyy):", cancellationToken: ct);
                     context.CurrentStep = "Deadline";
 
                     return ScenarioResult.Transition;
                 }
                 case "Deadline":
                 {
-                    if (update.Message == null || update.Message.From == null || update.Message.From.Username == null)
-                        break;
-
-                    object? toDoItemObject = null;
-                    context.Data.TryGetValue(update.Message.From.Id.ToString(), out toDoItemObject);
-
-                    if (toDoItemObject == null)
-                        break;
-
-                    ToDoItem? toDoItem = (ToDoItem?)toDoItemObject;
-                    if (toDoItem == null)
+                    Message? botMessage = update.Message;
+                    if (botMessage == null || botMessage.From == null || botMessage.From.Username == null)
                         break;
 
                     DateTime? deadline = null;
@@ -92,15 +75,22 @@ namespace HW2.TelegramBot.Scenarios
                     }
                     catch
                     {
-                        await bot.SendMessage(update.Message.Chat.Id, "Дата введена неверно. Введите срок задачи (dd.MM.yyyy):", cancellationToken: ct);
+                        await bot.SendMessage(botMessage.Chat.Id, "Дата введена неверно. Введите срок задачи (dd.MM.yyyy):", cancellationToken: ct);
                         context.CurrentStep = "Deadline";
                         return ScenarioResult.Transition;
                     }
 
-                    await _toDoService.Delete(toDoItem.UserId, toDoItem.Id, ct);
-                    await _toDoService.Add(toDoItem.UserId, toDoItem.Name, deadline, null, ct);
+                    string? toDoItemName = context.Data["Name"].ToString();
+                    if (string.IsNullOrEmpty(toDoItemName))
+                        throw new Exception("Название задачи не сохранилось.");
 
-                    await bot.SendMessage(update.Message.Chat.Id, $"Задача {toDoItem.Name} добавлена", cancellationToken: ct);
+                    ToDoUser? toDoUser = await _userService.GetUser(context.UserId, ct);
+                    if (toDoUser == null)
+                        throw new Exception("Объект пользователя не найден.");
+
+                    await _toDoService.Add(toDoUser.UserId, toDoItemName, deadline, ct);
+
+                    await bot.SendMessage(update.Message.Chat.Id, $"Задача {toDoItemName} добавлена", cancellationToken: ct);
 
                     return ScenarioResult.Completed;
                 }

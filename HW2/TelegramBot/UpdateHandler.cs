@@ -873,7 +873,7 @@ namespace HW2
                 }
             }
 
-            return null;
+            throw new Exception($"Сценарий с типом '{scenarioType}' не добавлен.");
         }
 
         public async Task ProcessScenario(ITelegramBotClient botClient, ScenarioContext context, Update update, CancellationToken ct)
