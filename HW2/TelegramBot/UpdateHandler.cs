@@ -1,6 +1,9 @@
 ﻿using System.Text;
 using Core.Entity;
 using Core.Services;
+using HW2.Core.Services;
+using HW2.Infrastructure.Services;
+using HW2.TelegramBot.Dto;
 using HW2.TelegramBot.Scenario;
 using HW2.TelegramBot.Scenarios;
 using Infrastructure.DataAccess;
@@ -10,6 +13,7 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace HW2
 {
@@ -17,6 +21,7 @@ namespace HW2
     {
         private readonly IUserService _userService;
         private readonly IToDoService _toDoService;
+        private readonly IToDoListService _toDoListService;
         private readonly IEnumerable<IScenario> _scenarios;
         private readonly IScenarioContextRepository _contextRepository;
 
@@ -46,10 +51,12 @@ namespace HW2
         event MessageEventHandler OnHandleUpdateStarted = delegate { };
         event MessageEventHandler OnHandleUpdateCompleted = delegate { };
 
-        public UpdateHandler(IUserService userService, IToDoService toDoService, IEnumerable<IScenario> scenarios, IScenarioContextRepository contextRepository)
+        public UpdateHandler(IUserService userService, IToDoService toDoService, IToDoListService toDoListService, 
+                             IEnumerable<IScenario> scenarios, IScenarioContextRepository contextRepository)
         {
             _userService = userService;
             _toDoService = toDoService;
+            _toDoListService = toDoListService;
             _scenarios = scenarios;
             _contextRepository = contextRepository;
 
@@ -79,13 +86,9 @@ namespace HW2
                                           UserItemsCompleteCommand, 
                                           "Перевести состояние задачи пользователя в выполненное.", 
                                           true));            
-            _commands.Add(new CommandData("/showactivetasks",
-                                          UserItemsShowActiveCommand,
+            _commands.Add(new CommandData("/show",
+                                          UserItemsShowCommand,
                                           "Список активных задач пользователя.",
-                                          true));
-            _commands.Add(new CommandData("/showalltasks",
-                                          UserItemsShowAllCommand,
-                                          "Список всех задач пользователя.",
                                           true));
             _commands.Add(new CommandData("/taskmaxlength", 
                                           UserItemsSetMaxLengthCommand, 
@@ -290,8 +293,7 @@ namespace HW2
         {
             var replyCommands = _commands.FindAll(c => 
                                     c.code == "/addtask"
-                                    || c.code == "/showactivetasks"
-                                    || c.code == "/showalltasks"
+                                    || c.code == "/show"
                                     || c.code == "/report"
                                 );
 
@@ -592,7 +594,7 @@ namespace HW2
                 await botClient.SendMessage(botMessage.Chat, $"Установлено максимально допустимое количество задач: {number}.", cancellationToken: ct);
             }
         }
-        private async Task UserItemsShowActiveCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
+        private async Task UserItemsShowCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
             if (update == null)
                 return;
@@ -610,26 +612,15 @@ namespace HW2
                 return;
             }
 
-            var userCommands = await _toDoService.GetActiveByUserId(user.obj.UserId, ct);
-
-            if (userCommands.Count == 0)
-            {
-                await botClient.SendMessage(botMessage.Chat, "Список задач пуст.", cancellationToken: ct);
-
-                return;
-            }
-
-            StringBuilder str = new();
-            for (int i = 0; i < userCommands.Count; ++i)
-            {
-                ToDoItem item = userCommands.ElementAt(i);
-                if (item != null)
+            await botClient.SendMessage(botMessage.Chat, "Выберите список", cancellationToken: ct,
+                replyMarkup: new InlineKeyboardMarkup
                 {
-                    str.AppendLine($"{i + 1}. {item.ToString()}");
-                }
-            }
+                    InlineKeyboard = [
+                                        [InlineKeyboardButton.WithCallbackData("Без списка", "show"), InlineKeyboardButton.WithCallbackData("Со списком", "show|id")],
+                                        [InlineKeyboardButton.WithCallbackData("Добавить", "addlist"), InlineKeyboardButton.WithCallbackData("Удалить", "deletelist")]
+                                     ]
 
-            await botClient.SendMessage(botMessage.Chat, str.ToString(), cancellationToken: ct);
+                });
         }
         public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource errorSource, CancellationToken ct)
         {
@@ -658,28 +649,6 @@ namespace HW2
 
             return Task.CompletedTask;
         }
-        private async Task UserItemsShowAllCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
-        {
-            if (update == null)
-                return;
-
-            Message botMessage = update.Message;
-            if (botMessage == null)
-                return;
-
-            var user = await GetToDoUser(botMessage.From.Id, ct);
-
-            if (user.obj == null)
-            {
-                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + user.error, cancellationToken: ct);
-
-                return;
-            }
-
-            var userCommands = await _toDoService.GetAllByUserId(user.obj.UserId, ct);
-
-            await botClient.SendMessage(botMessage.Chat, GetToDoItemsStringList(userCommands), cancellationToken: ct);
-        }
         private async Task UserItemsReportCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
             if (update == null)
@@ -703,7 +672,7 @@ namespace HW2
                 return;
             }
 
-            ToDoReportService report = new(toDoService.ToDoRepository);
+            ToDoReportService report = new(toDoService.toDoRepository);
             
             var reportResult = await report.GetUserStats(user.UserId, ct);
 

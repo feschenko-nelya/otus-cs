@@ -9,7 +9,7 @@ namespace Infrastructure.Services
 {
     public class ToDoService : IToDoService
     {
-        private readonly IToDoRepository _toDoRepository;
+        public readonly IToDoRepository toDoRepository;
 
         private struct ItemLimit
         {
@@ -26,27 +26,27 @@ namespace Infrastructure.Services
 
         public ToDoService(IToDoRepository toDoRepository)
         {
-            _toDoRepository = toDoRepository;
+            this.toDoRepository = toDoRepository;
         }
         public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken cancelToken)
         {
-            return await _toDoRepository.GetActiveByUserId(userId, cancelToken);
+            return await toDoRepository.GetActiveByUserId(userId, cancelToken);
         }
 
         public async Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken cancelToken)
         {
-            return await _toDoRepository.GetAllByUserId(userId, cancelToken);
+            return await toDoRepository.GetAllByUserId(userId, cancelToken);
         }
         public async Task<IReadOnlyList<ToDoItem>> Find(ToDoUser user, string namePrefix, CancellationToken cancelToken)
         {
             Func<ToDoItem, bool> predicate = (item) => item.Name.StartsWith(namePrefix);
 
-            return await _toDoRepository.Find(user.UserId, predicate, cancelToken);
+            return await toDoRepository.Find(user.UserId, predicate, cancelToken);
         }
 
         public async Task<bool> MarkCompleted(Guid userId, Guid itemId, CancellationToken cancelToken)
         {
-            ToDoItem? item = await _toDoRepository.Get(itemId, cancelToken);
+            ToDoItem? item = await toDoRepository.Get(itemId, cancelToken);
 
             if (item == null)
             {
@@ -54,7 +54,7 @@ namespace Infrastructure.Services
             }
 
             item.SetCompleted();
-            _toDoRepository?.Update(item, cancelToken);
+            toDoRepository?.Update(item, cancelToken);
 
             return true;
         }
@@ -63,7 +63,7 @@ namespace Infrastructure.Services
         {
             ItemLimit userItemLimit = GetUserItemLimit(userId);
 
-            IReadOnlyList<ToDoItem> items = await _toDoRepository.GetAllByUserId(userId, cancelToken);
+            IReadOnlyList<ToDoItem> items = await toDoRepository.GetAllByUserId(userId, cancelToken);
             if (items.Count == userItemLimit.Number)
             {
                 throw new TaskCountLimitException(userItemLimit.Number);
@@ -74,7 +74,7 @@ namespace Infrastructure.Services
                 throw new TaskLengthLimitException(name.Length, userItemLimit.Length);
             }
 
-            if (_toDoRepository.ExistsByName(userId, name, cancelToken).Result)
+            if (toDoRepository.ExistsByName(userId, name, cancelToken).Result)
             {
                 throw new DuplicateTaskException(name);
             }
@@ -83,14 +83,14 @@ namespace Infrastructure.Services
             newItem.UserId = userId;
             newItem.Deadline = deadline;
 
-            await _toDoRepository.Add(newItem, cancelToken);
+            await toDoRepository.Add(newItem, cancelToken);
 
             return newItem;
         }
 
         public async Task<bool> Delete(Guid userId, Guid itemId, CancellationToken cancelToken)
         {
-            await _toDoRepository.Delete(itemId, cancelToken);
+            await toDoRepository.Delete(itemId, cancelToken);
             
             return true;
         }

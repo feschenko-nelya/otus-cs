@@ -1,6 +1,9 @@
 ﻿
 using Core.DataAccess;
+using HW2.Core.DataAccess;
+using HW2.Core.Services;
 using HW2.Infrastructure.DataAccess;
+using HW2.Infrastructure.Services;
 using HW2.TelegramBot.Scenario;
 using HW2.TelegramBot.Scenarios;
 using Infrastructure.DataAccess;
@@ -23,10 +26,13 @@ namespace HW2
             IToDoRepository toDoRepository = new FileToDoRepository("ToDoItems");
             ToDoService toDoService = new(toDoRepository);
 
+            IToDoListRepository toDoListRepository = new FileToDoListRepository("ToDoLists");
+            IToDoListService toDoListService = new ToDoListService(toDoListRepository);
+
             IEnumerable<IScenario> scenarios = [new AddTaskScenario(userService, toDoService)];
             IScenarioContextRepository contextRepository = new InMemoryScenarioContextRepository();
 
-            var handler = new UpdateHandler(userService, toDoService, scenarios, contextRepository);
+            var handler = new UpdateHandler(userService, toDoService, toDoListService, scenarios, contextRepository);
 
             try
             {

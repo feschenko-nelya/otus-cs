@@ -1,15 +1,11 @@
 ﻿
-using System.Collections.Generic;
 using System.Text.Json;
-using System.Xml.Linq;
-using Core.Entity;
 using HW2.Core.DataAccess;
 using HW2.Core.Entities;
-using Telegram.Bot.Types;
 
 namespace HW2.Infrastructure.DataAccess
 {
-    internal class FileToDoListRepository : IToDoListRepository
+    public class FileToDoListRepository : IToDoListRepository
     {
         private string _repositoryDir = "toDoLists";
 
