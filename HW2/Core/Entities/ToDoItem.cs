@@ -18,7 +18,7 @@ namespace Core.Entity
         public ToDoItemState State { get; set; }
         public DateTime? StateChangedAt { get; private set; }
         public DateTime? Deadline { get; set; }
-        private ToDoList? List { get; }
+        public ToDoList? List { get; }
 
         public ToDoItem(string name)
         {

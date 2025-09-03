@@ -3,7 +3,7 @@ using HW2.Core.Entities;
 
 namespace HW2.Core.DataAccess
 {
-    internal interface IToDoListRepository
+    public interface IToDoListRepository
     {
         //Если спика нет, то возвращает null
         Task<ToDoList?> Get(Guid id, CancellationToken ct);

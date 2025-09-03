@@ -12,5 +12,6 @@ namespace Core.Services
         Task<ToDoItem> Add(Guid userId, string name, DateTime? deadline, ToDoList? list, CancellationToken cancelToken);
         Task<bool> MarkCompleted(Guid userId, Guid itemId, CancellationToken cancelToken);
         Task<bool> Delete(Guid userId, Guid itemId, CancellationToken cancelToken);
+        Task<IReadOnlyList<ToDoItem>> GetByUserIdAndList(Guid userId, Guid? listId, CancellationToken ct);
     }
 }

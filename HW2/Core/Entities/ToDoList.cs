@@ -11,11 +11,12 @@ namespace HW2.Core.Entities
         public ToDoUser User { get; init; }
         public DateTime CreatedAt { get; init; }
 
-        public ToDoList(ToDoUser toDoUser)
+        public ToDoList(ToDoUser toDoUser, string name)
         {
             Id = Guid.NewGuid();
             User = toDoUser;
             CreatedAt = DateTime.Now;
+            Name = name;
 
         }
     }
