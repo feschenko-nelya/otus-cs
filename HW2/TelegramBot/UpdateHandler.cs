@@ -120,14 +120,39 @@ namespace HW2
 
             try
             {
+                Message? message = update.Message;
+                User? user = null;
+
+                if (message == null)
+                {
+                    user = update.CallbackQuery?.From;
+                    message = update.CallbackQuery?.Message;
+                }
+                else
+                {
+                    user = message.From;
+                }
+
+                if (message == null)
+                    throw new Exception("Не обнаружен объект сообщения.");
+
                 if (ct.IsCancellationRequested)
                 {
-                    Message botMessage = update.Message;
-                    if (botMessage is null)
-                        return;
-
-                    await botClient.SendMessage(botMessage.Chat, "", 
+                    await botClient.SendMessage(message.Chat, "", 
                                                 replyMarkup: new ReplyKeyboardRemove());
+                }
+
+                if (message.Text == "/cancel")
+                {
+                    await CancelCommand(botClient, update, ct);
+                    return;
+                }
+
+                ScenarioContext? scenarioContext = await _contextRepository.GetContext(user.Id, ct);
+                if (scenarioContext != null)
+                {
+                    await ProcessScenario(botClient, scenarioContext, update, ct);
+                    return;
                 }
 
                 switch (update.Type)
@@ -164,12 +189,12 @@ namespace HW2
             if (string.IsNullOrEmpty(query.Data))
                 return;
 
-            User? user = query.From;
-            if (user == null)
-                return;
-
             Message? botMessage = query.Message;
             if (botMessage == null)
+                return;
+
+            User? user = query.From;
+            if (user == null)
                 return;
 
             if (!await IsEnabled(user.Id, ct))
@@ -207,6 +232,11 @@ namespace HW2
             else if (commonCallback.Action == "addlist")
             {
                 ScenarioContext addScenario = new(ScenarioType.AddList, user.Id);
+                await ProcessScenario(botClient, addScenario, update, ct);
+            }
+            else if (commonCallback.Action == "deletelist")
+            {
+                ScenarioContext addScenario = new(ScenarioType.DeleteList, user.Id);
                 await ProcessScenario(botClient, addScenario, update, ct);
             }
         }
@@ -249,19 +279,6 @@ namespace HW2
 
             string[] args = botMessageText.Split(' ');
             CommandData command = _commands.Find(command => command.code == args[0]);
-
-            if (command.code == "/cancel")
-            {
-                await CancelCommand(botClient, update, ct);
-                return;
-            }
-
-            ScenarioContext? scenarioContext = await _contextRepository.GetContext(botMessage.From.Id, ct);
-            if (scenarioContext != null)
-            {
-                await ProcessScenario(botClient, scenarioContext, update, ct);
-                return;
-            }
 
             if (command.Equals(default(CommandData)))
             {
@@ -380,7 +397,7 @@ namespace HW2
             return keyboard;
         }
 
-        public List<BotCommand> GetBotCommands(long telegramUserId, CancellationToken ct)
+        public BotCommand[] GetBotCommands(long telegramUserId, CancellationToken ct)
         {
             List<BotCommand> botCommands = new();
             
@@ -394,7 +411,7 @@ namespace HW2
                 botCommands.Add(new BotCommand(command.code, command.help));
             }
 
-            return botCommands;
+            return botCommands.ToArray();
         }
 
         private async Task InfoCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
@@ -678,12 +695,11 @@ namespace HW2
                 return;
             }
 
-            var toDoLists = await _toDoListService.GetUserLists(user.obj.UserId, ct);
-
             var keyboard = new InlineKeyboardMarkup();
 
             keyboard.AddNewRow(InlineKeyboardButton.WithCallbackData("\u2754 Без списка", "show"));
 
+            var toDoLists = await _toDoListService.GetUserLists(user.obj.UserId, ct);
             foreach (var list in toDoLists)
             {
                 if (string.IsNullOrEmpty(list.Name))

@@ -30,7 +30,8 @@ namespace HW2
             IToDoListService toDoListService = new ToDoListService(toDoListRepository);
 
             IEnumerable<IScenario> scenarios = [new AddTaskScenario(userService, toDoService),
-                                                new AddListScenario(userService, toDoListService)];
+                                                new AddListScenario(userService, toDoListService),
+                                                new DeleteListScenario(userService, toDoListService, toDoService)];
             IScenarioContextRepository contextRepository = new InMemoryScenarioContextRepository();
 
             var handler = new UpdateHandler(userService, toDoService, toDoListService, scenarios, contextRepository);
@@ -57,12 +58,12 @@ namespace HW2
                     DropPendingUpdates = true
                 };
 
-                await botClient.SetMyCommands(handler.GetBotCommands(-1, cts.Token));
-
                 botClient.StartReceiving(handler, receiverOptions: receiverOptions, cancellationToken: cts.Token);
 
                 var me = await botClient.GetMe();
                 Console.WriteLine($"{me.FirstName} запущен!");
+
+                await botClient.SetMyCommands(handler.GetBotCommands(-1, cts.Token));
 
                 Console.WriteLine("Нажмите клавишу A для выхода");
 

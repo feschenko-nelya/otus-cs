@@ -80,9 +80,12 @@ namespace HW2.Infrastructure.DataAccess
                 }
 
                 var streamR = File.OpenText(file);
-
                 var json = streamR.ReadToEnd();
+                
                 ToDoList? toDoList = JsonSerializer.Deserialize<ToDoList>(json);
+
+                streamR.Close();
+
                 if (toDoList == null)
                     continue;
 
@@ -115,7 +118,10 @@ namespace HW2.Infrastructure.DataAccess
 
             StreamReader rstream = File.OpenText(GetFileName(id));
             string userJson = rstream.ReadToEnd();
+            
             ToDoList? toDoList = JsonSerializer.Deserialize<ToDoList>(userJson);
+
+            rstream.Close();
 
             return Task.FromResult(toDoList);
         }
@@ -143,9 +149,12 @@ namespace HW2.Infrastructure.DataAccess
                         break;
 
                     var streamR = File.OpenText(file);
-
                     var json = streamR.ReadToEnd();
+
                     ToDoList? toDoList = JsonSerializer.Deserialize<ToDoList>(json);
+                    
+                    streamR.Close();
+
                     if (toDoList == null)
                         continue;
 
@@ -155,7 +164,6 @@ namespace HW2.Infrastructure.DataAccess
                     }
                 }
             });
-
 
             return result;
         }
