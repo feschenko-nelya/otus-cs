@@ -13,7 +13,6 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace HW2
 {
@@ -169,6 +168,10 @@ namespace HW2
             if (user == null)
                 return;
 
+            Message? botMessage = query.Message;
+            if (botMessage == null)
+                return;
+
             if (!await IsEnabled(user.Id, ct))
                 return;
 
@@ -184,6 +187,11 @@ namespace HW2
 
                 var items = await _toDoService.GetByUserIdAndList(toDoUser.UserId, toDoListCallback.ToDoListId, ct);
 
+                if (items.Count == 0)
+                {
+                    await botClient.SendMessage(botMessage.Chat, "Список задач пуст.", cancellationToken: ct);
+                }
+
                 StringBuilder str = new();
                 for (int i = 0; i < items.Count; ++i)
                 {
@@ -193,10 +201,6 @@ namespace HW2
                         str.AppendLine($"{i + 1}. {item.ToString()}");
                     }
                 }
-
-                Message? botMessage = query.Message;
-                if (botMessage == null)
-                    return;
 
                 await botClient.SendMessage(botMessage.Chat, str.ToString(), cancellationToken: ct);
             }
@@ -657,11 +661,15 @@ namespace HW2
             if (update == null)
                 return;
 
-            Message botMessage = update.Message;
+            Message? botMessage = update.Message;
             if (botMessage == null)
                 return;
 
-            var user = await GetToDoUser(botMessage.From.Id, ct);
+            User? botUser = botMessage.From;
+            if (botUser == null)
+                return;
+
+            var user = await GetToDoUser(botUser.Id, ct);
 
             if (user.obj == null)
             {
@@ -670,16 +678,25 @@ namespace HW2
                 return;
             }
 
+            var toDoLists = await _toDoListService.GetUserLists(user.obj.UserId, ct);
+
+            var keyboard = new InlineKeyboardMarkup();
+
+            keyboard.AddNewRow(InlineKeyboardButton.WithCallbackData("\u2754 Без списка", "show"));
+
+            foreach (var list in toDoLists)
+            {
+                if (string.IsNullOrEmpty(list.Name))
+                    continue;
+
+                keyboard.AddNewRow(InlineKeyboardButton.WithCallbackData(list.Name, $"show|{list.Id}"));
+            }
+
+            keyboard.AddNewRow([InlineKeyboardButton.WithCallbackData("🆕 Добавить", "addlist"),
+                                InlineKeyboardButton.WithCallbackData("\u274C Удалить", "deletelist")]);
+
             await botClient.SendMessage(botMessage.Chat, "Выберите список", cancellationToken: ct,
-                                        replyMarkup: new InlineKeyboardMarkup
-                                        {
-                                            InlineKeyboard = [
-                                                                [InlineKeyboardButton.WithCallbackData("\u2754 Без списка", "show|null"), 
-                                                                 InlineKeyboardButton.WithCallbackData("\u2728 Со списком", "show|id")],
-                                                                [InlineKeyboardButton.WithCallbackData("\u2795 Добавить", "addlist"), 
-                                                                 InlineKeyboardButton.WithCallbackData("\u274C Удалить", "deletelist")]
-                                                             ]
-                                        });
+                                        replyMarkup: keyboard);
         }
         public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource errorSource, CancellationToken ct)
         {

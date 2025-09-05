@@ -1,10 +1,8 @@
 ﻿
-using Core.DataAccess;
 using Core.Entity;
 using HW2.Core.DataAccess;
 using HW2.Core.Entities;
 using HW2.Core.Services;
-using Telegram.Bot.Types;
 
 namespace HW2.Infrastructure.Services
 {

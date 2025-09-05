@@ -27,7 +27,7 @@ namespace HW2.Infrastructure.DataAccess
 
             await Task.Run(() =>
             {
-                string json = JsonSerializer.Serialize(list);
+                string json = JsonSerializer.Serialize<ToDoList>(list);
 
                 StreamWriter wstream = File.CreateText(GetFileName(list.Id));
                 wstream.Write(json);
@@ -82,11 +82,11 @@ namespace HW2.Infrastructure.DataAccess
                 var streamR = File.OpenText(file);
 
                 var json = streamR.ReadToEnd();
-                ToDoList? toDoList = JsonSerializer.Deserialize<ToDoList?>(json);
+                ToDoList? toDoList = JsonSerializer.Deserialize<ToDoList>(json);
                 if (toDoList == null)
                     continue;
 
-                if (toDoList.User.UserId == userId && toDoList.Name == name)
+                if (toDoList.UserId == userId && toDoList.Name == name)
                 {
                     return Task.FromResult<bool>(true);
                 }
@@ -122,8 +122,6 @@ namespace HW2.Infrastructure.DataAccess
 
         public async Task<IReadOnlyList<ToDoList>> GetByUserId(Guid userId, CancellationToken ct)
         {
-            IReadOnlyList<ToDoList> result = [];
-
             if (string.IsNullOrEmpty(_repositoryDir))
             {
                 throw new DirectoryNotFoundException();
@@ -133,6 +131,8 @@ namespace HW2.Infrastructure.DataAccess
             {
                 return [];
             }
+
+            List<ToDoList> result = [];
 
             await Task.Run(() =>
             {
@@ -145,13 +145,13 @@ namespace HW2.Infrastructure.DataAccess
                     var streamR = File.OpenText(file);
 
                     var json = streamR.ReadToEnd();
-                    ToDoList? toDoList = JsonSerializer.Deserialize<ToDoList?>(json);
+                    ToDoList? toDoList = JsonSerializer.Deserialize<ToDoList>(json);
                     if (toDoList == null)
                         continue;
 
-                    if (toDoList.User.UserId == userId)
+                    if (toDoList.UserId == userId)
                     {
-                        result.Append(toDoList);
+                        result.Add(toDoList);
                     }
                 }
             });
