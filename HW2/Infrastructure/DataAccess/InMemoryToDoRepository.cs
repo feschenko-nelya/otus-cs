@@ -75,8 +75,11 @@ namespace Infrastructure.DataAccess
             });
         }
 
-        public async Task<ToDoItem?> Get(Guid id, CancellationToken cancelToken)
+        public async Task<ToDoItem?> Get(Guid? id, CancellationToken cancelToken)
         {
+            if (id == null)
+                return null;
+
             return await Task<ToDoItem?>.Run(() =>
             {
                 foreach (ToDoItem item in _items)

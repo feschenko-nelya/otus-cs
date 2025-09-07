@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using Core.Entity;
 using Core.Services;
+using HW2.Core.Entities;
 using HW2.Core.Services;
 using HW2.Infrastructure.Services;
 using HW2.TelegramBot.Dto;
@@ -80,10 +81,6 @@ namespace HW2
             _commands.Add(new CommandData("/removetask",
                                           UserItemsRemoveCommand,
                                           "Удаление задачи пользователя.",
-                                          true));
-            _commands.Add(new CommandData("/completetask", 
-                                          UserItemsCompleteCommand, 
-                                          "Перевести состояние задачи пользователя в выполненное.", 
                                           true));            
             _commands.Add(new CommandData("/show",
                                           UserItemsShowCommand,
@@ -210,6 +207,10 @@ namespace HW2
 
                 var toDoListCallback = ToDoListCallbackDto.FromString(query.Data);
 
+                ToDoList? toDoList = await _toDoListService.Get(toDoListCallback.ToDoListId, ct);
+                if (toDoList == null)
+                    return;
+
                 var items = await _toDoService.GetByUserIdAndList(toDoUser.UserId, toDoListCallback.ToDoListId, ct);
 
                 if (items.Count == 0)
@@ -218,17 +219,73 @@ namespace HW2
                     return;
                 }
 
-                StringBuilder str = new();
-                for (int i = 0; i < items.Count; ++i)
+                InlineKeyboardMarkup tasksKeyboard = new();
+
+                foreach (ToDoItem item in items)
                 {
-                    ToDoItem item = items.ElementAt(i);
-                    if (item != null)
-                    {
-                        str.AppendLine($"{i + 1}. {item.ToString()}");
-                    }
+                    tasksKeyboard.AddNewRow(InlineKeyboardButton.WithCallbackData(item.Name, $"showtask|{item.Id}"));
                 }
 
-                await botClient.SendMessage(botMessage.Chat, str.ToString(), cancellationToken: ct);
+                await botClient.SendMessage(botMessage.Chat, $"Список задач '{toDoList.Name}'", replyMarkup: tasksKeyboard, cancellationToken: ct);
+            }
+            else if (commonCallback.Action == "showtask")
+            {
+                var toDoItemCallback = ToDoItemCallbackDto.FromString(query.Data);
+                if (toDoItemCallback.ToDoItemId == null)
+                    return;
+
+                ToDoItem? toDoItem = await _toDoService.Get(toDoItemCallback.ToDoItemId, ct);
+                if (toDoItem == null)
+                { 
+                    await botClient.SendMessage(botMessage.Chat, "Информация по задаче не найдена.", cancellationToken: ct);
+                    return;
+                }
+
+                InlineKeyboardMarkup keyboard = new();
+                keyboard.AddButtons(
+                    [
+                        InlineKeyboardButton.WithCallbackData("✅ Выполнить", $"completetask|{toDoItem.Id}"),
+                        InlineKeyboardButton.WithCallbackData("❌Удалить", $"deletetask|{toDoItem.Id}")
+                    ]);
+
+                await botClient.SendMessage(botMessage.Chat, toDoItem.GetHtmlString(), replyMarkup: keyboard, 
+                                            cancellationToken: ct, parseMode: ParseMode.Html);
+            }
+            else if (commonCallback.Action == "completetask")
+            {
+                var toDoItemCallback = ToDoItemCallbackDto.FromString(query.Data);
+                if (toDoItemCallback.ToDoItemId == null)
+                    return;
+
+                ToDoItem? toDoItem = await _toDoService.Get(toDoItemCallback.ToDoItemId, ct);
+                if (toDoItem == null)
+                {
+                    await botClient.SendMessage(botMessage.Chat, "Информация по задаче не найдена.", cancellationToken: ct);
+                    return;
+                }
+
+                if (await _toDoService.MarkCompleted(toDoItem.UserId, toDoItem.Id, ct))
+                    await botClient.SendMessage(botMessage.Chat, $"Задача '{toDoItem.Name}' отмечена как выполненная.", cancellationToken: ct);
+                else
+                    await botClient.SendMessage(botMessage.Chat, $"Задача '{toDoItem.Name}' не отмечена как выполненная.", cancellationToken: ct);
+            }
+            else if (commonCallback.Action == "deletetask")
+            {
+                var toDoItemCallback = ToDoItemCallbackDto.FromString(query.Data);
+                if (toDoItemCallback.ToDoItemId == null)
+                    return;
+
+                ToDoItem? toDoItem = await _toDoService.Get(toDoItemCallback.ToDoItemId, ct);
+                if (toDoItem == null)
+                {
+                    await botClient.SendMessage(botMessage.Chat, "Информация по задаче не найдена.", cancellationToken: ct);
+                    return;
+                }
+
+                if (await _toDoService.Delete(toDoItem.UserId, toDoItem.Id, ct))
+                    await botClient.SendMessage(botMessage.Chat, $"Задача '{toDoItem.Name}' удалена.", cancellationToken: ct);
+                else
+                    await botClient.SendMessage(botMessage.Chat, $"Задача '{toDoItem.Name}' не удалена.", cancellationToken: ct);
             }
             else if (commonCallback.Action == "addlist")
             {
@@ -493,47 +550,6 @@ namespace HW2
 
             ScenarioContext addScenario = new(ScenarioType.AddTask, user.obj.TelegramUserId);
             await ProcessScenario(botClient, addScenario, update, ct);
-        }
-        private async Task UserItemsCompleteCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
-        {
-            if (update == null)
-                return;
-
-            Message botMessage = update.Message;
-            if (botMessage == null)
-                return;
-
-            var user = await GetToDoUser(botMessage.From.Id, ct);
-
-            if (user.obj == null)
-            {
-                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + user.error, cancellationToken: ct);
-
-                return;
-            }
-
-            List<string> args = GetCommandArguments(botMessage.Text);
-            if (args.Count == 0)
-            {
-                await botClient.SendMessage(botMessage.Chat, "Введите Guid команды, которую нужно удалить.", cancellationToken: ct);
-                return;
-            }
-
-            Guid guid;
-            if (!Guid.TryParse(args.ElementAt(0), out guid))
-            {
-                await botClient.SendMessage(botMessage.Chat, "Guid команды неверный.", cancellationToken: ct);
-                return;
-            }
-
-            if (await _toDoService.MarkCompleted(user.obj.UserId, guid, ct))
-            {
-                await botClient.SendMessage(botMessage.Chat, "Команда отмечена как выполненная.", cancellationToken: ct);
-            }
-            else
-            {
-                await botClient.SendMessage(botMessage.Chat, "Команда не отмечена как выполненная.", cancellationToken: ct);
-            }
         }
         private async Task UserItemsRemoveCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {

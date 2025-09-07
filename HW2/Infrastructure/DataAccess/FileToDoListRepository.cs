@@ -98,8 +98,11 @@ namespace HW2.Infrastructure.DataAccess
             return Task.FromResult<bool>(false);
         }
 
-        public Task<ToDoList?> Get(Guid id, CancellationToken ct)
+        public Task<ToDoList?> Get(Guid? id, CancellationToken ct)
         {
+            if (id == null)
+                return Task.FromResult<ToDoList?>(null);
+
             if (string.IsNullOrEmpty(_repositoryDir))
             {
                 throw new DirectoryNotFoundException();
@@ -168,8 +171,11 @@ namespace HW2.Infrastructure.DataAccess
             return result;
         }
 
-        private string GetFileName(Guid id)
+        private string GetFileName(Guid? id)
         {
+            if (id == null)
+                return "";
+
             return Path.Combine(_repositoryDir, id.GetHashCode().ToString() + ".json");
         }
     }

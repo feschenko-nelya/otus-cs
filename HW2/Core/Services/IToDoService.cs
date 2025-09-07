@@ -5,6 +5,7 @@ namespace Core.Services
 {
     public interface IToDoService
     {
+        Task<ToDoItem?> Get(Guid? toDoItemId, CancellationToken ct);
         Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken cancelToken);
         //Возвращает ToDoItem для UserId со статусом Active
         Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken cancelToken);

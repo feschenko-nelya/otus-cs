@@ -28,6 +28,10 @@ namespace Infrastructure.Services
         {
             this.toDoRepository = toDoRepository;
         }
+        public async Task<ToDoItem?> Get(Guid? toDoItemId, CancellationToken ct)
+        {
+            return await toDoRepository.Get(toDoItemId, ct);
+        }
         public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken cancelToken)
         {
             return await toDoRepository.GetActiveByUserId(userId, cancelToken);
