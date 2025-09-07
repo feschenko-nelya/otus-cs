@@ -8,7 +8,7 @@ namespace Core.Services
         //Возвращает ToDoItem для UserId со статусом Active
         Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken cancelToken);
         Task<IReadOnlyList<ToDoItem>> Find(ToDoUser user, string namePrefix, CancellationToken cancelToken);
-        Task<ToDoItem> Add(Guid userId, string name, CancellationToken cancelToken);
+        Task<ToDoItem> Add(Guid userId, string name, DateTime? deadline, CancellationToken cancelToken);
         Task<bool> MarkCompleted(Guid userId, Guid itemId, CancellationToken cancelToken);
         Task<bool> Delete(Guid userId, Guid itemId, CancellationToken cancelToken);
     }

@@ -56,7 +56,7 @@ namespace Infrastructure.Services
             return true;
         }
 
-        public async Task<ToDoItem> Add(Guid userId, string name, CancellationToken cancelToken)
+        public async Task<ToDoItem> Add(Guid userId, string name, DateTime? deadline, CancellationToken cancelToken)
         {
             ItemLimit userItemLimit = GetUserItemLimit(userId);
 
@@ -78,6 +78,7 @@ namespace Infrastructure.Services
 
             var newItem = new ToDoItem(name);
             newItem.UserId = userId;
+            newItem.Deadline = deadline;
 
             await ToDoRepository.Add(newItem, cancelToken);
 
