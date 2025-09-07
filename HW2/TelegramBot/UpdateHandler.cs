@@ -217,7 +217,7 @@ namespace HW2
 
                 if (items.Count == 0)
                 {
-                    await botClient.EditMessageText(botMessage.Chat, botMessage.Id, "Список задач пуст.", cancellationToken: ct);
+                    await botClient.EditMessageText(botMessage.Chat, botMessage.Id, "Задач нет.", cancellationToken: ct);
                     return;
                 }
 
@@ -225,12 +225,36 @@ namespace HW2
 
                 foreach (ToDoItem item in items)
                 {
+                    if (pagedToDoListCallback.IsCompleted && item.State != ToDoItemState.Completed)
+                        continue;
+
                     buttonsData.Add(KeyValuePair.Create(item.Name, $"showtask|{item.Id}"));
+                }
+
+                if (buttonsData.Count == 0)
+                {
+                    await botClient.EditMessageText(botMessage.Chat, botMessage.Id, "Задач нет.", cancellationToken: ct);
+                    return;
                 }
 
                 InlineKeyboardMarkup tasksKeyboard = BuildPagedButtons(buttonsData, pagedToDoListCallback);
 
-                await botClient.EditMessageText(botMessage.Chat, botMessage.Id, $"Список задач '{toDoList.Name}'", 
+                StringBuilder strb = new();
+                strb.Append("Список");
+                if (pagedToDoListCallback.IsCompleted)
+                {
+                    strb.Append(" выполненных");
+                }
+                else
+                { 
+                    tasksKeyboard.AddNewRow(InlineKeyboardButton.WithCallbackData(
+                                                                    "☑️ Посмотреть выполненные",
+                                                                   $"show|{pagedToDoListCallback.ToDoListId}|0|completed")
+                    );
+                }
+                strb.Append($" задач '{toDoList.Name}'");
+
+                await botClient.EditMessageText(botMessage.Chat, botMessage.Id, strb.ToString(), 
                                                 replyMarkup: tasksKeyboard, cancellationToken: ct);
             }
             else if (commonCallback.Action == "showtask")
@@ -241,7 +265,7 @@ namespace HW2
 
                 ToDoItem? toDoItem = await _toDoService.Get(toDoItemCallback.ToDoItemId, ct);
                 if (toDoItem == null)
-                { 
+                {
                     await botClient.SendMessage(botMessage.Chat, "Информация по задаче не найдена.", cancellationToken: ct);
                     return;
                 }
@@ -253,7 +277,7 @@ namespace HW2
                         InlineKeyboardButton.WithCallbackData("❌ Удалить", $"deletetask|{toDoItem.Id}")
                     ]);
 
-                await botClient.SendMessage(botMessage.Chat, toDoItem.GetHtmlString(), replyMarkup: keyboard, 
+                await botClient.SendMessage(botMessage.Chat, toDoItem.GetHtmlString(), replyMarkup: keyboard,
                                             cancellationToken: ct, parseMode: ParseMode.Html);
             }
             else if (commonCallback.Action == "completetask")

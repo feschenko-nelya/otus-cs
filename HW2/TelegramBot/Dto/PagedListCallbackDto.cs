@@ -4,6 +4,7 @@ namespace HW2.TelegramBot.Dto
     public class PagedListCallbackDto : ToDoListCallbackDto
     {
         public int Page { get; set; } = 0;
+        public bool IsCompleted { get; set; } = false;
         public PagedListCallbackDto() { }
 
         public static new PagedListCallbackDto FromString(string input)
@@ -29,6 +30,11 @@ namespace HW2.TelegramBot.Dto
                 int page;
                 if (int.TryParse(values[2], out page))
                     result.Page = page;
+            }
+
+            if (values.Length > 3)
+            {
+                result.IsCompleted = (values[3] == "completed");
             }
 
             return result;
