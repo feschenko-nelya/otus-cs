@@ -215,6 +215,7 @@ namespace HW2
                 if (items.Count == 0)
                 {
                     await botClient.SendMessage(botMessage.Chat, "Список задач пуст.", cancellationToken: ct);
+                    return;
                 }
 
                 StringBuilder str = new();

@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Runtime.Serialization;
+using System.Text;
+using System.Text.Json.Serialization;
 using HW2.Core.Entities;
 
 namespace Core.Entity
@@ -11,15 +13,23 @@ namespace Core.Entity
     };
     public class ToDoItem
     {
-        public Guid Id { get; init; }
+        [JsonInclude]
+        public Guid Id { get; private set; }
         public Guid UserId { get; set; }
-        public string Name { get; init; }
-        public DateTime CreatedAt { get; init; }
+        public string Name { get; set; } = "";
+        [JsonInclude]
+        public DateTime CreatedAt { get; private set; }
         public ToDoItemState State { get; set; }
+        [JsonInclude]
         public DateTime? StateChangedAt { get; private set; }
         public DateTime? Deadline { get; set; }
-        public ToDoList? List { get; }
+        public ToDoList? List { get; set; }
 
+        [JsonConstructor]
+        private ToDoItem()
+        {
+
+        }
         public ToDoItem(string name)
         {
             Id = Guid.NewGuid();
@@ -63,5 +73,23 @@ namespace Core.Entity
 
             return "-";
         }
+        //public void GetObjectData(SerializationInfo info, StreamingContext context)
+        //{
+        //    Guid id;
+        //    if (Guid.TryParse(info.GetString("Id"), out id))
+        //        Id = id;
+
+        //    if (Guid.TryParse(info.GetString("UserId"), out id))
+        //        UserId = id;
+
+        //    Name = info.GetString("Name");
+
+        //    if (Guid.TryParse(info.GetString("UserId"), out id))
+        //        UserId = id;
+
+        //    DateTime createdAt;
+        //    if (DateTime.TryParse(info.GetString("CreatedAt"), out createdAt))
+        //        CreatedAt = createdAt;
+        //}
     }
 }

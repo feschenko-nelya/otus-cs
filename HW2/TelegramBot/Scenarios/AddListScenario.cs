@@ -72,7 +72,7 @@ namespace HW2.TelegramBot.Scenarios
 
                             await _toDoListService.Add(toDoUser, message.Text, ct);
 
-                            return ScenarioResult.Completed;
+                            return ScenarioResult.Transition;
                         }
                 }
 

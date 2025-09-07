@@ -81,7 +81,8 @@ namespace Infrastructure.Services
 
             var newItem = new ToDoItem(name);
             newItem.UserId = userId;
-            newItem.Deadline = deadline;
+            newItem.Deadline = (deadline == default(DateTime) || deadline == null) ? null : deadline;
+            newItem.List = list;
 
             await toDoRepository.Add(newItem, cancelToken);
 
@@ -142,17 +143,20 @@ namespace Infrastructure.Services
         }
         public async Task<IReadOnlyList<ToDoItem>> GetByUserIdAndList(Guid userId, Guid? listId, CancellationToken ct)
         {
+            if (listId == null)
+                return [];
+
             var toDoItems = await GetAllByUserId(userId, ct);
 
-            if ((toDoItems.Count == 0) || (listId == null))
-                return toDoItems;
+            if (toDoItems.Count == 0)
+                return [];
 
             List<ToDoItem> result = new();
 
             foreach (var toDoItem in toDoItems)
             {
                 if (toDoItem.List?.Id == listId)
-                    result.Append(toDoItem);
+                    result.Add(toDoItem);
             }
 
             return result.AsReadOnly();
