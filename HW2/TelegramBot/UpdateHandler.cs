@@ -4,7 +4,6 @@ using Core.Services;
 using HW2.Core.Entities;
 using HW2.Core.Services;
 using HW2.Helpers;
-using HW2.Infrastructure.Services;
 using HW2.TelegramBot.Dto;
 using HW2.TelegramBot.Scenario;
 using HW2.TelegramBot.Scenarios;
@@ -80,10 +79,6 @@ namespace HW2
                                           UserItemsAddCommand, 
                                           "Добавление новой задачи.", 
                                           true));
-            _commands.Add(new CommandData("/removetask",
-                                          UserItemsRemoveCommand,
-                                          "Удаление задачи пользователя.",
-                                          true));            
             _commands.Add(new CommandData("/show",
                                           UserItemsShowCommand,
                                           "Список активных задач пользователя.",
@@ -300,21 +295,8 @@ namespace HW2
             }
             else if (commonCallback.Action == "deletetask")
             {
-                var toDoItemCallback = ToDoItemCallbackDto.FromString(query.Data);
-                if (toDoItemCallback.ToDoItemId == null)
-                    return;
-
-                ToDoItem? toDoItem = await _toDoService.Get(toDoItemCallback.ToDoItemId, ct);
-                if (toDoItem == null)
-                {
-                    await botClient.SendMessage(botMessage.Chat, "Информация по задаче не найдена.", cancellationToken: ct);
-                    return;
-                }
-
-                if (await _toDoService.Delete(toDoItem.UserId, toDoItem.Id, ct))
-                    await botClient.SendMessage(botMessage.Chat, $"Задача '{toDoItem.Name}' удалена.", cancellationToken: ct);
-                else
-                    await botClient.SendMessage(botMessage.Chat, $"Задача '{toDoItem.Name}' не удалена.", cancellationToken: ct);
+                ScenarioContext delTaskScenario = new(ScenarioType.DeleteTask, user.Id);
+                await ProcessScenario(botClient, delTaskScenario, update, ct);
             }
             else if (commonCallback.Action == "addlist")
             {
@@ -579,47 +561,6 @@ namespace HW2
 
             ScenarioContext addScenario = new(ScenarioType.AddTask, user.obj.TelegramUserId);
             await ProcessScenario(botClient, addScenario, update, ct);
-        }
-        private async Task UserItemsRemoveCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
-        {
-            if (update == null)
-                return;
-
-            Message botMessage = update.Message;
-            if (botMessage == null)
-                return;
-
-            var user = await GetToDoUser(botMessage.From.Id, ct);
-
-            if (user.obj == null)
-            {
-                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + user.error, cancellationToken: ct);
-
-                return;
-            }
-
-            List<string> args = GetCommandArguments(botMessage.Text);
-            if (args.Count == 0)
-            {
-                await botClient.SendMessage(botMessage.Chat, "Введите Guid команды, которую нужно удалить.", cancellationToken: ct);
-                return;
-            }
-
-            Guid guid;
-            if (!Guid.TryParse(args.ElementAt(0), out guid))
-            {
-                await botClient.SendMessage(botMessage.Chat, "Guid команды неверный.", cancellationToken: ct);
-                return;
-            }
-
-            if (await _toDoService.Delete(user.obj.UserId, guid, ct))
-            {
-                await botClient.SendMessage(botMessage.Chat, "Команда удалена.", cancellationToken: ct);
-            }
-            else
-            {
-                await botClient.SendMessage(botMessage.Chat, "Команда не удалена.", cancellationToken: ct);
-            }
         }
         private async Task UserItemsSetMaxLengthCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
@@ -1008,10 +949,11 @@ namespace HW2
                 replyKeyboard.AddNewRow(InlineKeyboardButton.WithCallbackData(item.Key, item.Value));
             }
 
-            replyKeyboard.AddNewRow();
+            List<InlineKeyboardButton> buttons = new();
+
             if (listDto.Page > 0)
             {
-                replyKeyboard.AddButton(
+                buttons.Add(
                     InlineKeyboardButton.WithCallbackData("⬅️", 
                     new PagedListCallbackDto
                     { 
@@ -1019,13 +961,14 @@ namespace HW2
                         ToDoListId = listDto.ToDoListId,
                         Page = listDto.Page - 1
                     }
-                    .ToString()));
+                    .ToString())
+                );
             }
 
             int totalPages = callbackData.Count / _pageSize;
-            if (listDto.Page <= totalPages - 1)
+            if ((callbackData.Count > _pageSize) && (listDto.Page <= totalPages - 1))
             {
-                replyKeyboard.AddButton(
+                buttons.Add(
                     InlineKeyboardButton.WithCallbackData("➡️",
                     new PagedListCallbackDto
                     {
@@ -1033,7 +976,13 @@ namespace HW2
                         ToDoListId = listDto.ToDoListId,
                         Page = listDto.Page + 1
                     }
-                    .ToString()));
+                    .ToString())
+                );
+            }
+
+            if (buttons.Count > 0)
+            {
+                replyKeyboard.AddNewRow(buttons.ToArray());
             }
 
             return replyKeyboard;
