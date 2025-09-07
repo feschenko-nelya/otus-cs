@@ -3,6 +3,7 @@ using Core.Entity;
 using Core.Services;
 using HW2.Core.Entities;
 using HW2.Core.Services;
+using HW2.Helpers;
 using HW2.Infrastructure.Services;
 using HW2.TelegramBot.Dto;
 using HW2.TelegramBot.Scenario;
@@ -28,6 +29,7 @@ namespace HW2
         private static readonly Version _version = new Version(1, 0);
         private static readonly DateTime _creationDate = new DateTime(2025, 3, 27);
         private List<Chat> _chats = new();
+        int _pageSize = 5;
 
         delegate Task CommandExecutionHandler(ITelegramBotClient botClient, Update update, CancellationToken ct);
         struct CommandData
@@ -205,28 +207,31 @@ namespace HW2
                 if (toDoUser == null)
                     return;
 
-                var toDoListCallback = ToDoListCallbackDto.FromString(query.Data);
+                var pagedToDoListCallback = PagedListCallbackDto.FromString(query.Data);
 
-                ToDoList? toDoList = await _toDoListService.Get(toDoListCallback.ToDoListId, ct);
+                ToDoList? toDoList = await _toDoListService.Get(pagedToDoListCallback.ToDoListId, ct);
                 if (toDoList == null)
                     return;
 
-                var items = await _toDoService.GetByUserIdAndList(toDoUser.UserId, toDoListCallback.ToDoListId, ct);
+                var items = await _toDoService.GetByUserIdAndList(toDoUser.UserId, pagedToDoListCallback.ToDoListId, ct);
 
                 if (items.Count == 0)
                 {
-                    await botClient.SendMessage(botMessage.Chat, "Список задач пуст.", cancellationToken: ct);
+                    await botClient.EditMessageText(botMessage.Chat, botMessage.Id, "Список задач пуст.", cancellationToken: ct);
                     return;
                 }
 
-                InlineKeyboardMarkup tasksKeyboard = new();
+                List<KeyValuePair<string, string>> buttonsData = new();
 
                 foreach (ToDoItem item in items)
                 {
-                    tasksKeyboard.AddNewRow(InlineKeyboardButton.WithCallbackData(item.Name, $"showtask|{item.Id}"));
+                    buttonsData.Add(KeyValuePair.Create(item.Name, $"showtask|{item.Id}"));
                 }
 
-                await botClient.SendMessage(botMessage.Chat, $"Список задач '{toDoList.Name}'", replyMarkup: tasksKeyboard, cancellationToken: ct);
+                InlineKeyboardMarkup tasksKeyboard = BuildPagedButtons(buttonsData, pagedToDoListCallback);
+
+                await botClient.EditMessageText(botMessage.Chat, botMessage.Id, $"Список задач '{toDoList.Name}'", 
+                                                replyMarkup: tasksKeyboard, cancellationToken: ct);
             }
             else if (commonCallback.Action == "showtask")
             {
@@ -245,7 +250,7 @@ namespace HW2
                 keyboard.AddButtons(
                     [
                         InlineKeyboardButton.WithCallbackData("✅ Выполнить", $"completetask|{toDoItem.Id}"),
-                        InlineKeyboardButton.WithCallbackData("❌Удалить", $"deletetask|{toDoItem.Id}")
+                        InlineKeyboardButton.WithCallbackData("❌ Удалить", $"deletetask|{toDoItem.Id}")
                     ]);
 
                 await botClient.SendMessage(botMessage.Chat, toDoItem.GetHtmlString(), replyMarkup: keyboard, 
@@ -964,6 +969,50 @@ namespace HW2
             {
                 await _contextRepository.SetContext(context.UserId, context, ct);
             }
+        }
+
+        private InlineKeyboardMarkup BuildPagedButtons(IReadOnlyList<KeyValuePair<string, string>> callbackData, PagedListCallbackDto listDto)
+        {
+            InlineKeyboardMarkup replyKeyboard = new();
+
+            var items = callbackData.GetBatchByNumber(_pageSize, listDto.Page);
+            if (items.Count() == 0)
+                return replyKeyboard;
+
+            foreach (var item in items)
+            {
+                replyKeyboard.AddNewRow(InlineKeyboardButton.WithCallbackData(item.Key, item.Value));
+            }
+
+            replyKeyboard.AddNewRow();
+            if (listDto.Page > 0)
+            {
+                replyKeyboard.AddButton(
+                    InlineKeyboardButton.WithCallbackData("⬅️", 
+                    new PagedListCallbackDto
+                    { 
+                        Action = "show", 
+                        ToDoListId = listDto.ToDoListId,
+                        Page = listDto.Page - 1
+                    }
+                    .ToString()));
+            }
+
+            int totalPages = callbackData.Count / _pageSize;
+            if (listDto.Page <= totalPages - 1)
+            {
+                replyKeyboard.AddButton(
+                    InlineKeyboardButton.WithCallbackData("➡️",
+                    new PagedListCallbackDto
+                    {
+                        Action = "show",
+                        ToDoListId = listDto.ToDoListId,
+                        Page = listDto.Page + 1
+                    }
+                    .ToString()));
+            }
+
+            return replyKeyboard;
         }
     }
 }
