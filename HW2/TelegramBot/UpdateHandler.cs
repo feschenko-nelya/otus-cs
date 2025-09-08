@@ -1,6 +1,9 @@
 ﻿using System.Text;
 using Core.Entity;
 using Core.Services;
+using HW2.Core.Services;
+using HW2.Infrastructure.Services;
+using HW2.TelegramBot.Dto;
 using HW2.TelegramBot.Scenario;
 using HW2.TelegramBot.Scenarios;
 using Infrastructure.DataAccess;
@@ -17,6 +20,7 @@ namespace HW2
     {
         private readonly IUserService _userService;
         private readonly IToDoService _toDoService;
+        private readonly IToDoListService _toDoListService;
         private readonly IEnumerable<IScenario> _scenarios;
         private readonly IScenarioContextRepository _contextRepository;
 
@@ -46,10 +50,12 @@ namespace HW2
         event MessageEventHandler OnHandleUpdateStarted = delegate { };
         event MessageEventHandler OnHandleUpdateCompleted = delegate { };
 
-        public UpdateHandler(IUserService userService, IToDoService toDoService, IEnumerable<IScenario> scenarios, IScenarioContextRepository contextRepository)
+        public UpdateHandler(IUserService userService, IToDoService toDoService, IToDoListService toDoListService, 
+                             IEnumerable<IScenario> scenarios, IScenarioContextRepository contextRepository)
         {
             _userService = userService;
             _toDoService = toDoService;
+            _toDoListService = toDoListService;
             _scenarios = scenarios;
             _contextRepository = contextRepository;
 
@@ -79,13 +85,9 @@ namespace HW2
                                           UserItemsCompleteCommand, 
                                           "Перевести состояние задачи пользователя в выполненное.", 
                                           true));            
-            _commands.Add(new CommandData("/showactivetasks",
-                                          UserItemsShowActiveCommand,
+            _commands.Add(new CommandData("/show",
+                                          UserItemsShowCommand,
                                           "Список активных задач пользователя.",
-                                          true));
-            _commands.Add(new CommandData("/showalltasks",
-                                          UserItemsShowAllCommand,
-                                          "Список всех задач пользователя.",
                                           true));
             _commands.Add(new CommandData("/taskmaxlength", 
                                           UserItemsSetMaxLengthCommand, 
@@ -116,19 +118,41 @@ namespace HW2
                 return;
             }
 
-            Message botMessage = update.Message;
-            
-            if (botMessage is null)
-            {
-                return;
-            }
-
             try
             {
+                Message? message = update.Message;
+                User? user = null;
+
+                if (message == null)
+                {
+                    user = update.CallbackQuery?.From;
+                    message = update.CallbackQuery?.Message;
+                }
+                else
+                {
+                    user = message.From;
+                }
+
+                if (message == null)
+                    throw new Exception("Не обнаружен объект сообщения.");
+
                 if (ct.IsCancellationRequested)
                 {
-                    await botClient.SendMessage(botMessage.Chat, "", 
+                    await botClient.SendMessage(message.Chat, "", 
                                                 replyMarkup: new ReplyKeyboardRemove());
+                }
+
+                if (message.Text == "/cancel")
+                {
+                    await CancelCommand(botClient, update, ct);
+                    return;
+                }
+
+                ScenarioContext? scenarioContext = await _contextRepository.GetContext(user.Id, ct);
+                if (scenarioContext != null)
+                {
+                    await ProcessScenario(botClient, scenarioContext, update, ct);
+                    return;
                 }
 
                 switch (update.Type)
@@ -138,11 +162,83 @@ namespace HW2
                     await BotOnMessageReceived(botClient, update, ct);
                     return;
                 }
+                case UpdateType.CallbackQuery:
+                {
+                    await OnCallbackQuery(botClient, update, ct);
+                    return;
+                }
                 }
             }
             catch (Exception exception)
             {
                 await HandleErrorAsync(botClient, exception, HandleErrorSource.FatalError, ct);
+            }
+        }
+
+        private async Task OnCallbackQuery(ITelegramBotClient botClient, Update update, CancellationToken ct)
+        {
+            if (update == null)
+                return;
+
+            var query = update.CallbackQuery;
+            if (query == null)
+                return;
+
+            await botClient.AnswerCallbackQuery(query.Id, "");
+
+            if (string.IsNullOrEmpty(query.Data))
+                return;
+
+            Message? botMessage = query.Message;
+            if (botMessage == null)
+                return;
+
+            User? user = query.From;
+            if (user == null)
+                return;
+
+            if (!await IsEnabled(user.Id, ct))
+                return;
+
+            var commonCallback = CallbackDto.FromString(query.Data);
+
+            if (commonCallback.Action == "show")
+            {
+                ToDoUser? toDoUser = await _userService.GetUser(user.Id, ct);
+                if (toDoUser == null)
+                    return;
+
+                var toDoListCallback = ToDoListCallbackDto.FromString(query.Data);
+
+                var items = await _toDoService.GetByUserIdAndList(toDoUser.UserId, toDoListCallback.ToDoListId, ct);
+
+                if (items.Count == 0)
+                {
+                    await botClient.SendMessage(botMessage.Chat, "Список задач пуст.", cancellationToken: ct);
+                    return;
+                }
+
+                StringBuilder str = new();
+                for (int i = 0; i < items.Count; ++i)
+                {
+                    ToDoItem item = items.ElementAt(i);
+                    if (item != null)
+                    {
+                        str.AppendLine($"{i + 1}. {item.ToString()}");
+                    }
+                }
+
+                await botClient.SendMessage(botMessage.Chat, str.ToString(), cancellationToken: ct);
+            }
+            else if (commonCallback.Action == "addlist")
+            {
+                ScenarioContext addScenario = new(ScenarioType.AddList, user.Id);
+                await ProcessScenario(botClient, addScenario, update, ct);
+            }
+            else if (commonCallback.Action == "deletelist")
+            {
+                ScenarioContext addScenario = new(ScenarioType.DeleteList, user.Id);
+                await ProcessScenario(botClient, addScenario, update, ct);
             }
         }
 
@@ -184,19 +280,6 @@ namespace HW2
 
             string[] args = botMessageText.Split(' ');
             CommandData command = _commands.Find(command => command.code == args[0]);
-
-            if (command.code == "/cancel")
-            {
-                await CancelCommand(botClient, update, ct);
-                return;
-            }
-
-            ScenarioContext? scenarioContext = await _contextRepository.GetContext(botMessage.From.Id, ct);
-            if (scenarioContext != null)
-            {
-                await ProcessScenario(botClient, scenarioContext, update, ct);
-                return;
-            }
 
             if (command.Equals(default(CommandData)))
             {
@@ -290,8 +373,7 @@ namespace HW2
         {
             var replyCommands = _commands.FindAll(c => 
                                     c.code == "/addtask"
-                                    || c.code == "/showactivetasks"
-                                    || c.code == "/showalltasks"
+                                    || c.code == "/show"
                                     || c.code == "/report"
                                 );
 
@@ -316,7 +398,7 @@ namespace HW2
             return keyboard;
         }
 
-        public List<BotCommand> GetBotCommands(long telegramUserId, CancellationToken ct)
+        public BotCommand[] GetBotCommands(long telegramUserId, CancellationToken ct)
         {
             List<BotCommand> botCommands = new();
             
@@ -330,7 +412,7 @@ namespace HW2
                 botCommands.Add(new BotCommand(command.code, command.help));
             }
 
-            return botCommands;
+            return botCommands.ToArray();
         }
 
         private async Task InfoCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
@@ -592,16 +674,20 @@ namespace HW2
                 await botClient.SendMessage(botMessage.Chat, $"Установлено максимально допустимое количество задач: {number}.", cancellationToken: ct);
             }
         }
-        private async Task UserItemsShowActiveCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
+        private async Task UserItemsShowCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
             if (update == null)
                 return;
 
-            Message botMessage = update.Message;
+            Message? botMessage = update.Message;
             if (botMessage == null)
                 return;
 
-            var user = await GetToDoUser(botMessage.From.Id, ct);
+            User? botUser = botMessage.From;
+            if (botUser == null)
+                return;
+
+            var user = await GetToDoUser(botUser.Id, ct);
 
             if (user.obj == null)
             {
@@ -610,26 +696,24 @@ namespace HW2
                 return;
             }
 
-            var userCommands = await _toDoService.GetActiveByUserId(user.obj.UserId, ct);
+            var keyboard = new InlineKeyboardMarkup();
 
-            if (userCommands.Count == 0)
+            keyboard.AddNewRow(InlineKeyboardButton.WithCallbackData("\u2754 Без списка", "show"));
+
+            var toDoLists = await _toDoListService.GetUserLists(user.obj.UserId, ct);
+            foreach (var list in toDoLists)
             {
-                await botClient.SendMessage(botMessage.Chat, "Список задач пуст.", cancellationToken: ct);
+                if (string.IsNullOrEmpty(list.Name))
+                    continue;
 
-                return;
+                keyboard.AddNewRow(InlineKeyboardButton.WithCallbackData(list.Name, $"show|{list.Id}"));
             }
 
-            StringBuilder str = new();
-            for (int i = 0; i < userCommands.Count; ++i)
-            {
-                ToDoItem item = userCommands.ElementAt(i);
-                if (item != null)
-                {
-                    str.AppendLine($"{i + 1}. {item.ToString()}");
-                }
-            }
+            keyboard.AddNewRow([InlineKeyboardButton.WithCallbackData("🆕 Добавить", "addlist"),
+                                InlineKeyboardButton.WithCallbackData("\u274C Удалить", "deletelist")]);
 
-            await botClient.SendMessage(botMessage.Chat, str.ToString(), cancellationToken: ct);
+            await botClient.SendMessage(botMessage.Chat, "Выберите список", cancellationToken: ct,
+                                        replyMarkup: keyboard);
         }
         public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource errorSource, CancellationToken ct)
         {
@@ -658,28 +742,6 @@ namespace HW2
 
             return Task.CompletedTask;
         }
-        private async Task UserItemsShowAllCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
-        {
-            if (update == null)
-                return;
-
-            Message botMessage = update.Message;
-            if (botMessage == null)
-                return;
-
-            var user = await GetToDoUser(botMessage.From.Id, ct);
-
-            if (user.obj == null)
-            {
-                await botClient.SendMessage(botMessage.Chat, "Ошибка: " + user.error, cancellationToken: ct);
-
-                return;
-            }
-
-            var userCommands = await _toDoService.GetAllByUserId(user.obj.UserId, ct);
-
-            await botClient.SendMessage(botMessage.Chat, GetToDoItemsStringList(userCommands), cancellationToken: ct);
-        }
         private async Task UserItemsReportCommand(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
             if (update == null)
@@ -703,7 +765,7 @@ namespace HW2
                 return;
             }
 
-            ToDoReportService report = new(toDoService.ToDoRepository);
+            ToDoReportService report = new(toDoService.toDoRepository);
             
             var reportResult = await report.GetUserStats(user.UserId, ct);
 
@@ -861,20 +923,26 @@ namespace HW2
 
             ScenarioResult scenarioResult = await scenario.HandleMessageAsync(botClient, context, update, ct);
 
-            Message? botMessage = update.Message;
-            if (botMessage == null)
-                return;
+            Chat? chat = null;
+
+            if (update.Message != null)
+            {
+                chat = update.Message.Chat;
+            }
+            else if (update.CallbackQuery != null)
+            {
+                chat = update.CallbackQuery.Message?.Chat;
+            }
+
+            if (chat == null)
+                throw new Exception("Чат не обнаружен.");
 
             if (scenarioResult == ScenarioResult.Completed)
             {
                 await _contextRepository.ResetContext(context.UserId, ct);
 
-                User? botUser = botMessage.From;
-                if (botUser == null)
-                    return;
-
-                await botClient.SendMessage(botMessage.Chat, "Команда завершена", cancellationToken: ct,
-                                        replyMarkup: await GetReplyKeyboardMarkup(botUser.Id, ct));
+                await botClient.SendMessage(chat, "Команда завершена", cancellationToken: ct,
+                                        replyMarkup: await GetReplyKeyboardMarkup(context.UserId, ct));
             }
             else
             {

@@ -361,8 +361,6 @@ namespace Infrastructure.DataAccess
                     _userItemIndexFile.Add(userHashCode, itemHashCode);
                 }
             }
-
-
         }
 
         private string GetFileName(ToDoItem item)

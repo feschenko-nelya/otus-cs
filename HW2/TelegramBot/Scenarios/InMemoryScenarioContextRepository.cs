@@ -1,9 +1,11 @@
 ﻿
+using System.Collections.Concurrent;
+
 namespace HW2.TelegramBot.Scenario
 {
     internal class InMemoryScenarioContextRepository : IScenarioContextRepository
     {
-        private Dictionary<long, ScenarioContext> _scenarios = new();
+        private ConcurrentDictionary<long, ScenarioContext> _scenarios = new();
         public Task<ScenarioContext?> GetContext(long userId, CancellationToken ct)
         {
             ScenarioContext? context = null;
@@ -17,7 +19,8 @@ namespace HW2.TelegramBot.Scenario
 
         public Task ResetContext(long userId, CancellationToken ct)
         {
-            _scenarios.Remove(userId);
+            ScenarioContext? remContext;
+            _scenarios.Remove(userId, out remContext);
 
             return Task.CompletedTask;
         }

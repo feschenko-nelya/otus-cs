@@ -15,7 +15,7 @@ namespace HW2.TelegramBot.Scenarios
     {
         //Проверяет, может ли текущий сценарий обрабатывать указанный тип сценария.
         //Используется для определения подходящего обработчика в системе сценариев.
-        bool CanHandle(ScenarioType scenario);
+        bool CanHandle(ScenarioType scenarioType);
         //Обрабатывает входящее сообщение от пользователя в рамках текущего сценария.
         //Включает основную бизнес-логику
         Task<ScenarioResult> HandleMessageAsync(ITelegramBotClient bot, ScenarioContext context, Update update, CancellationToken ct);

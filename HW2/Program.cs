@@ -1,6 +1,9 @@
 ﻿
 using Core.DataAccess;
+using HW2.Core.DataAccess;
+using HW2.Core.Services;
 using HW2.Infrastructure.DataAccess;
+using HW2.Infrastructure.Services;
 using HW2.TelegramBot.Scenario;
 using HW2.TelegramBot.Scenarios;
 using Infrastructure.DataAccess;
@@ -23,10 +26,15 @@ namespace HW2
             IToDoRepository toDoRepository = new FileToDoRepository("ToDoItems");
             ToDoService toDoService = new(toDoRepository);
 
-            IEnumerable<IScenario> scenarios = [new AddTaskScenario(userService, toDoService)];
+            IToDoListRepository toDoListRepository = new FileToDoListRepository("ToDoLists");
+            IToDoListService toDoListService = new ToDoListService(toDoListRepository);
+
+            IEnumerable<IScenario> scenarios = [new AddTaskScenario(userService, toDoService, toDoListService),
+                                                new AddListScenario(userService, toDoListService),
+                                                new DeleteListScenario(userService, toDoListService, toDoService)];
             IScenarioContextRepository contextRepository = new InMemoryScenarioContextRepository();
 
-            var handler = new UpdateHandler(userService, toDoService, scenarios, contextRepository);
+            var handler = new UpdateHandler(userService, toDoService, toDoListService, scenarios, contextRepository);
 
             try
             {
@@ -46,16 +54,16 @@ namespace HW2
 
                 var receiverOptions = new ReceiverOptions
                 {
-                    AllowedUpdates = [UpdateType.Message],
+                    AllowedUpdates = [UpdateType.Message, UpdateType.CallbackQuery],
                     DropPendingUpdates = true
                 };
-
-                await botClient.SetMyCommands(handler.GetBotCommands(-1, cts.Token));
 
                 botClient.StartReceiving(handler, receiverOptions: receiverOptions, cancellationToken: cts.Token);
 
                 var me = await botClient.GetMe();
                 Console.WriteLine($"{me.FirstName} запущен!");
+
+                await botClient.SetMyCommands(handler.GetBotCommands(-1, cts.Token));
 
                 Console.WriteLine("Нажмите клавишу A для выхода");
 

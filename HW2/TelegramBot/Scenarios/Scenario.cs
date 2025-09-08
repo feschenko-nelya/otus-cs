@@ -4,7 +4,9 @@ namespace HW2.TelegramBot.Scenario
     public enum ScenarioType
     {
         None,
-        AddTask
+        AddTask,
+        AddList,
+        DeleteList
     }
     internal class ScenarioContext
     {

@@ -1,4 +1,7 @@
-﻿using System.Text;
+﻿using System.Runtime.Serialization;
+using System.Text;
+using System.Text.Json.Serialization;
+using HW2.Core.Entities;
 
 namespace Core.Entity
 {
@@ -10,14 +13,23 @@ namespace Core.Entity
     };
     public class ToDoItem
     {
-        public Guid Id { get; init; }
+        [JsonInclude]
+        public Guid Id { get; private set; }
         public Guid UserId { get; set; }
-        public string Name { get; init; }
-        public DateTime CreatedAt { get; init; }
+        public string Name { get; set; } = "";
+        [JsonInclude]
+        public DateTime CreatedAt { get; private set; }
         public ToDoItemState State { get; set; }
+        [JsonInclude]
         public DateTime? StateChangedAt { get; private set; }
         public DateTime? Deadline { get; set; }
+        public ToDoList? List { get; set; }
 
+        [JsonConstructor]
+        private ToDoItem()
+        {
+
+        }
         public ToDoItem(string name)
         {
             Id = Guid.NewGuid();
