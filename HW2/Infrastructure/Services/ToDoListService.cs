@@ -30,7 +30,11 @@ namespace HW2.Infrastructure.Services
             if (isListNameExisted)
                 throw new Exception("Название списка уже существует.");
 
-            var newList = new ToDoList(user, name);
+            ToDoList newList = new()
+            {
+                UserId = user.UserId,
+                Name = name
+            };
 
             await _toDoListRepository.Add(newList, ct);
 

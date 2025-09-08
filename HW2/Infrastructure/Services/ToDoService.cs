@@ -83,10 +83,13 @@ namespace Infrastructure.Services
                 throw new DuplicateTaskException(name);
             }
 
-            var newItem = new ToDoItem(name);
-            newItem.UserId = userId;
-            newItem.Deadline = (deadline == default(DateTime) || deadline == null) ? null : deadline;
-            newItem.List = list;
+            ToDoItem newItem = new()
+            {
+                Name = name,
+                UserId = userId,
+                Deadline = (deadline == default(DateTime) || deadline == null) ? null : deadline,
+                ListId = list?.Id
+            };
 
             await toDoRepository.Add(newItem, cancelToken);
 
@@ -156,7 +159,7 @@ namespace Infrastructure.Services
                 return [];
 
             var result = from item in toDoItems
-                         where item.List?.Id == listId
+                         where item.ListId == listId
                          select item;
 
             return result.ToList();
