@@ -17,10 +17,7 @@ namespace HW2.Infrastructure.Services
         {
             if (name.Length > 10)
             {
-                throw new Exception($"""
-                    Размер имени списка не может быть больше 10 символов.
-                    В '{name}' {name.Length} символов.
-                    """);
+                throw new TaskLengthLimitException(name.Length, 10);
             }
 
             var toDoLists = await GetUserLists(user.UserId, ct);

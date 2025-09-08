@@ -5,7 +5,7 @@ using Core.Entity;
 
 namespace HW2.Core.Entities
 {
-    public class ToDoList : ISerializable
+    public class ToDoList
     {
         [JsonInclude]
         public Guid Id { get; private set; }
@@ -27,22 +27,6 @@ namespace HW2.Core.Entities
             CreatedAt = DateTime.Now;
             UserId = toDoUser.UserId;
             Name = name;
-        }
-
-        public void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            Guid id;
-            if (Guid.TryParse(info.GetString("Id"), out id))
-                Id = id;
-
-            Name = info.GetString("Name");
-
-            if (Guid.TryParse(info.GetString("UserId"), out id))
-                UserId = id;
-
-            DateTime createdAt;
-            if (DateTime.TryParse(info.GetString("CreatedAt"), out createdAt))
-                CreatedAt = createdAt;
         }
     }
 }

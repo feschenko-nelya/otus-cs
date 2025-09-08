@@ -73,23 +73,5 @@ namespace Core.Entity
 
             return "-";
         }
-        //public void GetObjectData(SerializationInfo info, StreamingContext context)
-        //{
-        //    Guid id;
-        //    if (Guid.TryParse(info.GetString("Id"), out id))
-        //        Id = id;
-
-        //    if (Guid.TryParse(info.GetString("UserId"), out id))
-        //        UserId = id;
-
-        //    Name = info.GetString("Name");
-
-        //    if (Guid.TryParse(info.GetString("UserId"), out id))
-        //        UserId = id;
-
-        //    DateTime createdAt;
-        //    if (DateTime.TryParse(info.GetString("CreatedAt"), out createdAt))
-        //        CreatedAt = createdAt;
-        //}
     }
 }
