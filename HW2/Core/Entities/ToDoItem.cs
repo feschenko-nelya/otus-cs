@@ -15,7 +15,7 @@ namespace Core.Entity
         public string Name { get; set; } = "";
         public DateTime CreatedAt { get; set; }
         public ToDoItemState State { get; set; }
-        public DateTime? StateChangedAt { get; set; }
+        public DateTime StateChangedAt { get; set; }
         public DateTime? Deadline { get; set; }
         public Guid? ListId { get; set; }
 

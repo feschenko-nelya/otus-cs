@@ -8,9 +8,9 @@ namespace HW2.Core.DataAccess.Models
     public class ToDoListModel
     {
         [Column("id"), PrimaryKey, NotNull]
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         [Column("userId"), NotNull]
-        public int UserId { get; set; }
+        public Guid UserId { get; set; }
         [Column("name"), NotNull]
         public string Name { get; set; } = "";
         [Column("createdAt"), NotNull]

@@ -6,9 +6,9 @@ namespace HW2.Core.DataAccess.Models
     public class ToDoUserModel
     {
         [Column("id"), PrimaryKey, NotNull]
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         [Column("telegramId"), NotNull]
-        public int TelegramId { get; set; }
+        public long TelegramId { get; set; }
         [Column("telegramName"), NotNull]
         public string TelegramName { get; set; } = "";
         [Column("registeredAt"), NotNull]

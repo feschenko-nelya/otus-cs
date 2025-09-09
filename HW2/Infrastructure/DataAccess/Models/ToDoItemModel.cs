@@ -8,17 +8,17 @@ namespace HW2.Core.DataAccess.Models
     public class ToDoItemModel
     {
         [Column("id"), PrimaryKey, Identity]
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         [Column("userId"), NotNull]
-        public int UserId { get; set; }
+        public Guid UserId { get; set; }
         [Column("listId")]
-        public int ListId { get; set; }
+        public Guid? ListId { get; set; }
         [Column("name"), NotNull]
         public string Name { get; set; } = "";
         [Column("createdAt"), NotNull]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         [Column("deadline")]
-        public DateTime Deadline { get; set; }
+        public DateTime? Deadline { get; set; }
         [Column("stateChangedAt"), NotNull]
         public DateTime StateChangedAt { get; set; } = DateTime.Now;
         [Column("state"), NotNull]
