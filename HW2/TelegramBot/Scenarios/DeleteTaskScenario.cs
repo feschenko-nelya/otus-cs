@@ -53,6 +53,9 @@ namespace HW2.TelegramBot.Scenarios
             {
                 case null:
                     {
+                        if (query.Data == null)
+                            return ScenarioResult.Completed;
+
                         var toDoItemCallback = ToDoItemCallbackDto.FromString(query.Data);
                         if (toDoItemCallback.ToDoItemId == null)
                         {
@@ -60,7 +63,7 @@ namespace HW2.TelegramBot.Scenarios
                             return ScenarioResult.Completed;
                         }
 
-                        ToDoItem? toDoItem = await _toDoService.Get(toDoItemCallback.ToDoItemId, ct);
+                        ToDoItem? toDoItem = await _toDoService.Get((Guid)toDoItemCallback.ToDoItemId, ct);
                         if (toDoItem == null)
                         {
                             await botClient.SendMessage(chat.Id, "Информация по задаче не найдена.", cancellationToken: ct);

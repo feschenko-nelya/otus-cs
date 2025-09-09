@@ -28,7 +28,7 @@ namespace Infrastructure.Services
         {
             this.toDoRepository = toDoRepository;
         }
-        public async Task<ToDoItem?> Get(Guid? toDoItemId, CancellationToken ct)
+        public async Task<ToDoItem?> Get(Guid toDoItemId, CancellationToken ct)
         {
             return await toDoRepository.Get(toDoItemId, ct);
         }

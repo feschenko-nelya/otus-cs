@@ -46,7 +46,7 @@ namespace HW2.Infrastructure.Services
             await _toDoListRepository.Delete(id, ct);
         }
 
-        public async Task<ToDoList?> Get(Guid? id, CancellationToken ct)
+        public async Task<ToDoList?> Get(Guid id, CancellationToken ct)
         {
             return await _toDoListRepository.Get(id, ct);
         }
