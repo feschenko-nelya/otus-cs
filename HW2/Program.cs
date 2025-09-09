@@ -31,6 +31,8 @@ namespace HW2
             IToDoListRepository toDoListRepository = new SqlToDoListRepository(dataContextFactory);
             IToDoListService toDoListService = new ToDoListService(toDoListRepository);
 
+            INotificationService notificationService = new NotificationService(dataContextFactory);
+
             IEnumerable<IScenario> scenarios = [new AddTaskScenario(userService, toDoService, toDoListService),
                                                 new DeleteTaskScenario(userService, toDoService),
                                                 new AddListScenario(userService, toDoListService),
@@ -57,6 +59,7 @@ namespace HW2
 
                 BackgroundTaskRunner runner = new BackgroundTaskRunner();
                 runner.AddTask(new ResetScenarioBackgroundTask(TimeSpan.FromHours(1), contextRepository, botClient));
+                runner.AddTask(new NotificationBackgroundTask(notificationService, botClient));
                 runner.StartTasks(cts.Token);
 
                 var receiverOptions = new ReceiverOptions
