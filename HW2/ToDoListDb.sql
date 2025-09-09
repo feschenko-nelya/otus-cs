@@ -4,42 +4,32 @@
 
 CREATE TABLE IF NOT EXISTS public."ToDoUser"
 (
-    id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
-    "telegramId" integer NOT NULL,
-    "telegramName" character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    "registeredAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id uuid NOT NULL DEFAULT uuid_generate_v1(),
+    registered_at time with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    telegram_id bigint NOT NULL,
+    telegram_name character varying(255) COLLATE pg_catalog."default" NOT NULL,
     CONSTRAINT todouser_primary_id PRIMARY KEY (id),
-    CONSTRAINT todouser_unique_id UNIQUE (id)
-        INCLUDE(id)
+    CONSTRAINT todouser_unique_id UNIQUE (id, telegram_id)
 )
 
 TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public."ToDoUser"
     OWNER to postgres;
--- Index: index_todouser_telegramid
 
--- DROP INDEX IF EXISTS public.index_todouser_telegramid;
-
-CREATE UNIQUE INDEX IF NOT EXISTS index_todouser_telegramid
-    ON public."ToDoUser" USING btree
-    ("telegramId" ASC NULLS LAST)
-    WITH (deduplicate_items=True)
-    TABLESPACE pg_default;
-	
 -- Table: public.ToDoList
 
 -- DROP TABLE IF EXISTS public."ToDoList";
 
 CREATE TABLE IF NOT EXISTS public."ToDoList"
 (
-    id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 0 MINVALUE 0 MAXVALUE 2147483647 CACHE 1 ),
-    "userId" integer NOT NULL,
+    id uuid NOT NULL DEFAULT uuid_generate_v1(),
+    user_id uuid NOT NULL,
     name character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    "createdAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at time with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT todolist_primary_id PRIMARY KEY (id),
     CONSTRAINT todolist_unique_name UNIQUE (name),
-    CONSTRAINT todolist_foreign_userid_todouser_id FOREIGN KEY ("userId")
+    CONSTRAINT todolist_foreign_userid FOREIGN KEY (user_id)
         REFERENCES public."ToDoUser" (id) MATCH SIMPLE
         ON UPDATE CASCADE
         ON DELETE CASCADE
@@ -49,40 +39,31 @@ TABLESPACE pg_default;
 
 ALTER TABLE IF EXISTS public."ToDoList"
     OWNER to postgres;
--- Index: index_todolist_userid
 
--- DROP INDEX IF EXISTS public.index_todolist_userid;
-
-CREATE INDEX IF NOT EXISTS index_todolist_userid
-    ON public."ToDoList" USING btree
-    ("userId" ASC NULLS LAST)
-    WITH (deduplicate_items=True)
-    TABLESPACE pg_default;
-	
 -- Table: public.ToDoItem
 
 -- DROP TABLE IF EXISTS public."ToDoItem";
 
 CREATE TABLE IF NOT EXISTS public."ToDoItem"
 (
-    id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 0 MINVALUE 0 MAXVALUE 2147483647 CACHE 1 ),
-    "userId" integer NOT NULL,
-    "listId" integer,
-    name character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    "createdAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deadline timestamp with time zone,
-    "stateChangedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    state "ToDoItemState" NOT NULL DEFAULT 1,
+    id uuid NOT NULL DEFAULT uuid_generate_v1(),
+    user_id uuid NOT NULL,
+    list_id uuid,
+    name character varying COLLATE pg_catalog."default" NOT NULL,
+    state "ToDoItemState" NOT NULL DEFAULT 0,
+    created_at time with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    state_changed_at time with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deadline time with time zone,
     CONSTRAINT todoitem_primary_id PRIMARY KEY (id),
-    CONSTRAINT todouser_unique_name UNIQUE (name),
-    CONSTRAINT todoitem_foreign_listid_todolist_id FOREIGN KEY ("listId")
+    CONSTRAINT todoitem_unique_name UNIQUE (name),
+    CONSTRAINT todoitem_foreign_list_id FOREIGN KEY (list_id)
         REFERENCES public."ToDoList" (id) MATCH SIMPLE
-        ON UPDATE CASCADE
-        ON DELETE SET NULL,
-    CONSTRAINT todoitem_foreign_userid_todouser_id FOREIGN KEY ("userId")
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION,
+    CONSTRAINT todoitem_foreign_user_id FOREIGN KEY (user_id)
         REFERENCES public."ToDoUser" (id) MATCH SIMPLE
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
 )
 
 TABLESPACE pg_default;
@@ -95,7 +76,7 @@ ALTER TABLE IF EXISTS public."ToDoItem"
 
 CREATE INDEX IF NOT EXISTS index_todoitem_userid
     ON public."ToDoItem" USING btree
-    ("userId" ASC NULLS LAST, "listId" ASC NULLS LAST)
+    (user_id ASC NULLS LAST, list_id ASC NULLS LAST)
     WITH (deduplicate_items=True)
     TABLESPACE pg_default;
-	
+
