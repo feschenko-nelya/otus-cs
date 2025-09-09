@@ -1,4 +1,6 @@
 ﻿using System.Text;
+using HW2.Core.Entities;
+using Telegram.Bot.Types;
 
 namespace Core.Entity
 {
@@ -18,6 +20,9 @@ namespace Core.Entity
         public DateTime StateChangedAt { get; set; }
         public DateTime? Deadline { get; set; }
         public Guid? ListId { get; set; }
+
+        public ToDoUser User { get; set; } = new();
+        public ToDoList? List { get; set; } = new();
 
         public void SetCompleted()
         {

@@ -24,10 +24,10 @@ namespace HW2.Core.DataAccess.Models
         [Column("state"), NotNull]
         public ToDoItemState State { get; set; }
 
-        [Association(ThisKey = nameof(UserId), OtherKey = nameof(User.UserId))]
-        public required ToDoUser User { get; set; }
+        [Association(ThisKey = nameof(UserId), OtherKey = nameof(User.Id))]
+        public required ToDoUserModel User { get; set; }
 
         [Association(ThisKey = nameof(ListId), OtherKey = nameof(List.Id))]
-        public required ToDoList List { get; set; }
+        public required ToDoListModel? List { get; set; }
     }
 }

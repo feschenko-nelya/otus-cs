@@ -1,6 +1,4 @@
-﻿
-using System.Reflection;
-using Core.Entity;
+﻿using Core.Entity;
 using HW2.Core.DataAccess.Models;
 using HW2.Core.Entities;
 
@@ -40,7 +38,10 @@ namespace HW2.Infrastructure.DataAccess
                 State = model.State,
                 CreatedAt = model.CreatedAt,
                 Deadline = model.Deadline,
-                StateChangedAt = model.StateChangedAt
+                StateChangedAt = model.StateChangedAt,
+
+                User = MapFromModel(model.User),
+                List = model.List == null ? null : MapFromModel(model.List)
             };
         }
         public static ToDoItemModel MapToModel(ToDoItem entity)
@@ -56,8 +57,8 @@ namespace HW2.Infrastructure.DataAccess
                 Deadline = entity.Deadline,
                 StateChangedAt = entity.StateChangedAt,
 
-                User = new ToDoUser { },
-                List = new ToDoList { }
+                User = MapToModel(entity.User),
+                List = (entity.List == null) ? null : MapToModel(entity.List)
             };
         }
         public static ToDoList MapFromModel(ToDoListModel model)
@@ -67,7 +68,9 @@ namespace HW2.Infrastructure.DataAccess
                 Id = model.Id,
                 UserId = model.UserId,
                 Name = model.Name,
-                CreatedAt = model.CreatedAt
+                CreatedAt = model.CreatedAt,
+
+                User = MapFromModel(model.User)
             };
         }
         public static ToDoListModel MapToModel(ToDoList entity)
@@ -79,8 +82,7 @@ namespace HW2.Infrastructure.DataAccess
                 Name = entity.Name ?? "",
                 CreatedAt = entity.CreatedAt,
 
-                User = new ToDoUser
-                { }
+                User = MapToModel(entity.User)
             };
         }
     }
