@@ -204,7 +204,10 @@ namespace HW2
 
                 var pagedToDoListCallback = PagedListCallbackDto.FromString(query.Data);
 
-                ToDoList? toDoList = await _toDoListService.Get(pagedToDoListCallback.ToDoListId, ct);
+                if (pagedToDoListCallback.ToDoListId == null)
+                    return;
+
+                ToDoList? toDoList = await _toDoListService.Get((Guid)pagedToDoListCallback.ToDoListId, ct);
                 if (toDoList == null)
                     return;
 
@@ -258,7 +261,7 @@ namespace HW2
                 if (toDoItemCallback.ToDoItemId == null)
                     return;
 
-                ToDoItem? toDoItem = await _toDoService.Get(toDoItemCallback.ToDoItemId, ct);
+                ToDoItem? toDoItem = await _toDoService.Get((Guid)toDoItemCallback.ToDoItemId, ct);
                 if (toDoItem == null)
                 {
                     await botClient.SendMessage(botMessage.Chat, "Информация по задаче не найдена.", cancellationToken: ct);
@@ -281,7 +284,7 @@ namespace HW2
                 if (toDoItemCallback.ToDoItemId == null)
                     return;
 
-                ToDoItem? toDoItem = await _toDoService.Get(toDoItemCallback.ToDoItemId, ct);
+                ToDoItem? toDoItem = await _toDoService.Get((Guid)toDoItemCallback.ToDoItemId, ct);
                 if (toDoItem == null)
                 {
                     await botClient.SendMessage(botMessage.Chat, "Информация по задаче не найдена.", cancellationToken: ct);

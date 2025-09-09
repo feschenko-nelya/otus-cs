@@ -98,11 +98,8 @@ namespace HW2.Infrastructure.DataAccess
             return Task.FromResult<bool>(false);
         }
 
-        public Task<ToDoList?> Get(Guid? id, CancellationToken ct)
+        public Task<ToDoList?> Get(Guid id, CancellationToken ct)
         {
-            if (id == null)
-                return Task.FromResult<ToDoList?>(null);
-
             if (string.IsNullOrEmpty(_repositoryDir))
             {
                 throw new DirectoryNotFoundException();
