@@ -7,11 +7,11 @@ namespace HW2.Core.DataAccess.Models
     {
         [Column("id"), PrimaryKey, NotNull]
         public Guid Id { get; set; }
-        [Column("telegramId"), NotNull]
+        [Column("telegram_id"), NotNull]
         public long TelegramId { get; set; }
-        [Column("telegramName"), NotNull]
+        [Column("telegram_name"), NotNull]
         public string TelegramName { get; set; } = "";
-        [Column("registeredAt"), NotNull]
+        [Column("registered_at"), NotNull]
         public DateTime RegisteredAt { get; set; } = DateTime.Now;
     }
 }

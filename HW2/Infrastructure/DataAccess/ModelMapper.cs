@@ -39,9 +39,6 @@ namespace HW2.Infrastructure.DataAccess
                 CreatedAt = model.CreatedAt,
                 Deadline = model.Deadline,
                 StateChangedAt = model.StateChangedAt,
-
-                User = MapFromModel(model.User),
-                List = model.List == null ? null : MapFromModel(model.List)
             };
         }
         public static ToDoItemModel MapToModel(ToDoItem entity)
@@ -57,8 +54,8 @@ namespace HW2.Infrastructure.DataAccess
                 Deadline = entity.Deadline,
                 StateChangedAt = entity.StateChangedAt,
 
-                User = MapToModel(entity.User),
-                List = (entity.List == null) ? null : MapToModel(entity.List)
+                User = new(),
+                List = null
             };
         }
         public static ToDoList MapFromModel(ToDoListModel model)
@@ -70,7 +67,7 @@ namespace HW2.Infrastructure.DataAccess
                 Name = model.Name,
                 CreatedAt = model.CreatedAt,
 
-                User = MapFromModel(model.User)
+                User = new()
             };
         }
         public static ToDoListModel MapToModel(ToDoList entity)
@@ -82,7 +79,7 @@ namespace HW2.Infrastructure.DataAccess
                 Name = entity.Name ?? "",
                 CreatedAt = entity.CreatedAt,
 
-                User = MapToModel(entity.User)
+                User = new()
             };
         }
     }

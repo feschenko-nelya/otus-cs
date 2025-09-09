@@ -1,6 +1,7 @@
 ﻿using LinqToDB.Mapping;
 using Core.Entity;
-using HW2.Core.Entities;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 
 namespace HW2.Core.DataAccess.Models
 {
@@ -9,19 +10,26 @@ namespace HW2.Core.DataAccess.Models
     {
         [Column("id"), PrimaryKey, Identity]
         public Guid Id { get; set; }
-        [Column("userId"), NotNull]
+
+        [Column("user_id"), NotNull]
         public Guid UserId { get; set; }
-        [Column("listId")]
+
+        [Column("list_id")]
         public Guid? ListId { get; set; }
+
         [Column("name"), NotNull]
         public string Name { get; set; } = "";
-        [Column("createdAt"), NotNull]
+
+        [Column("created_at"), NotNull]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+
         [Column("deadline")]
         public DateTime? Deadline { get; set; }
-        [Column("stateChangedAt"), NotNull]
+
+        [Column("state_changed_at"), NotNull, DefaultValue(true)]
         public DateTime StateChangedAt { get; set; } = DateTime.Now;
-        [Column("state"), NotNull]
+
+        [Column("state"), NotNull, DefaultValue(true)]
         public ToDoItemState State { get; set; }
 
         [Association(ThisKey = nameof(UserId), OtherKey = nameof(User.Id))]

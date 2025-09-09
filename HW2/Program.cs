@@ -20,13 +20,14 @@ namespace HW2
         {
             using var cts = new CancellationTokenSource();
 
-            IUserRepository usersRepository = new FileUserRepository("ToDoUsers");
+            IDataContextFactory<ToDoDataContext> dataContextFactory = new DataContextFactory();
+            IUserRepository usersRepository = new SqlUserRepository(dataContextFactory);
             UserService userService = new(usersRepository);
 
-            IToDoRepository toDoRepository = new FileToDoRepository("ToDoItems");
+            IToDoRepository toDoRepository = new SqlToDoRepository(dataContextFactory);
             ToDoService toDoService = new(toDoRepository);
 
-            IToDoListRepository toDoListRepository = new FileToDoListRepository("ToDoLists");
+            IToDoListRepository toDoListRepository = new SqlToDoListRepository(dataContextFactory);
             IToDoListService toDoListService = new ToDoListService(toDoListRepository);
 
             IEnumerable<IScenario> scenarios = [new AddTaskScenario(userService, toDoService, toDoListService),
