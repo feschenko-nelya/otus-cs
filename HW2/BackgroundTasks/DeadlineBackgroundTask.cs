@@ -1,6 +1,5 @@
 ﻿
 using Core.DataAccess;
-using HW2.Core.Entities;
 using HW2.Core.Services;
 
 namespace HW2.BackgroundTasks
@@ -24,26 +23,6 @@ namespace HW2.BackgroundTasks
                                                                    DateTime.UtcNow, 
                                                                    ct);
                 }
-            }
-
-            
-
-            if (notifies.Count == 0)
-                return;
-
-            var updates = await botClient.GetUpdates();
-
-            foreach (Notification notify in notifies)
-            {
-                foreach (Telegram.Bot.Types.Update upd in updates)
-                {
-                    if (upd.Message != null)
-                    {
-                        await botClient.SendMessage(upd.Message.Chat, notify.Text);
-                    }
-                }
-
-                await notificationService.MarkNotified(notify.Id, ct);
             }
         }
     }

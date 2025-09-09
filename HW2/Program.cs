@@ -61,6 +61,8 @@ namespace HW2
                 runner.AddTask(new ResetScenarioBackgroundTask(TimeSpan.FromHours(1), contextRepository, botClient));
                 runner.AddTask(new NotificationBackgroundTask(notificationService, botClient));
                 runner.AddTask(new DeadlineBackgroundTask(notificationService, usersRepository, toDoRepository));
+                runner.AddTask(new TodayBackgroundTask(notificationService, usersRepository, toDoRepository));
+
                 runner.StartTasks(cts.Token);
 
                 var receiverOptions = new ReceiverOptions
