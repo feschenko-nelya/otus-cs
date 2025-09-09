@@ -193,11 +193,8 @@ namespace Infrastructure.DataAccess
             return items;
         }
 
-        public async Task<ToDoItem?> Get(Guid? id, CancellationToken cancelToken)
+        public async Task<ToDoItem?> Get(Guid id, CancellationToken cancelToken)
         {
-            if (id == null)
-                return null;
-
             if (string.IsNullOrEmpty(_repositoryDir))
             {
                 throw new DirectoryNotFoundException();

@@ -9,7 +9,7 @@ namespace Core.DataAccess
         // Возвращает ToDoItem для UserId со статусом Active
         Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken cancelToken);
         Task<IReadOnlyList<ToDoItem>> Find(Guid userId, Func<ToDoItem, bool> predicate, CancellationToken cancelToken);
-        Task<ToDoItem?> Get(Guid? id, CancellationToken cancelToken);
+        Task<ToDoItem?> Get(Guid id, CancellationToken cancelToken);
         Task Add(ToDoItem item, CancellationToken cancelToken);
         Task Update(ToDoItem item, CancellationToken cancelToken);
         Task Delete(Guid id, CancellationToken cancelToken);
