@@ -1,6 +1,8 @@
-﻿using Core.Entity;
+﻿using System.Reflection;
+using Core.Entity;
 using HW2.Core.DataAccess.Models;
 using HW2.Core.Entities;
+using HW2.Infrastructure.DataAccess.Models;
 
 namespace HW2.Infrastructure.DataAccess
 {
@@ -80,6 +82,32 @@ namespace HW2.Infrastructure.DataAccess
                 CreatedAt = entity.CreatedAt,
 
                 User = new()
+            };
+        }
+        public static Notification MapFromModel(NotificationModel model)
+        {
+            return new Notification
+            {
+                Id = model.Id,
+                User = MapFromModel(model.User),
+                Type = model.Type,
+                Text = model.Text,
+                ScheduledAt = model.ScheduledAt,
+                IsNotified = model.IsNotified,
+                NotifiedAt = model.NotifiedAt                
+            };
+        }
+        public static NotificationModel MapToModel(Notification entity)
+        {
+            return new NotificationModel
+            {
+                Id = entity.Id,
+                User = MapToModel(entity.User),
+                Type = entity.Type,
+                Text = entity.Text,
+                ScheduledAt = entity.ScheduledAt,
+                IsNotified = entity.IsNotified,
+                NotifiedAt = entity.NotifiedAt
             };
         }
     }

@@ -1,7 +1,5 @@
 ﻿using LinqToDB.Mapping;
 using Core.Entity;
-using System.ComponentModel;
-using System.Runtime.InteropServices;
 
 namespace HW2.Core.DataAccess.Models
 {
@@ -26,10 +24,10 @@ namespace HW2.Core.DataAccess.Models
         [Column("deadline")]
         public DateTime? Deadline { get; set; }
 
-        [Column("state_changed_at"), NotNull, DefaultValue(true)]
+        [Column("state_changed_at"), NotNull]
         public DateTime StateChangedAt { get; set; } = DateTime.Now;
 
-        [Column("state"), NotNull, DefaultValue(true)]
+        [Column("state"), NotNull]
         public ToDoItemState State { get; set; }
 
         [Association(ThisKey = nameof(UserId), OtherKey = nameof(User.Id))]
