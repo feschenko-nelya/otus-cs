@@ -99,6 +99,11 @@ namespace HW2.Infrastructure.DataAccess
             return resToDoUser;
         }
 
+        public Task<IReadOnlyList<ToDoUser>> GetUsers(CancellationToken ct)
+        {
+            return Task.FromResult<IReadOnlyList<ToDoUser>>([]);
+        }
+
         private string GetFileName(Guid id)
         {
             return Path.Combine(_repositoryDir, id.GetHashCode().ToString() + ".json");

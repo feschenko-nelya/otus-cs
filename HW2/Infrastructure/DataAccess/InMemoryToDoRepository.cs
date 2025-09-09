@@ -160,5 +160,10 @@ namespace Infrastructure.DataAccess
                 ownItem = item;
             }
         }
+
+        public Task<IReadOnlyList<ToDoItem>> GetActiveWithDeadline(Guid userId, DateTime from, DateTime to, CancellationToken ct)
+        {
+            return Task.FromResult<IReadOnlyList<ToDoItem>>([]);
+        }
     }
 }

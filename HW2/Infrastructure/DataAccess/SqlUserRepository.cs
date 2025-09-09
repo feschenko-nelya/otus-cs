@@ -1,9 +1,11 @@
 ﻿
+using System.Collections.Generic;
 using Core.DataAccess;
 using Core.Entity;
 using HW2.Core.DataAccess;
 using HW2.Core.DataAccess.Models;
 using LinqToDB;
+using Telegram.Bot.Types;
 
 namespace HW2.Infrastructure.DataAccess
 {
@@ -53,6 +55,18 @@ namespace HW2.Infrastructure.DataAccess
                 return Task.FromResult<ToDoUser?>(null);
 
             return Task.FromResult(ModelMapper.MapFromModel(user) ?? null);
+        }
+
+        public Task<IReadOnlyList<ToDoUser>> GetUsers(CancellationToken ct)
+        {
+            List<ToDoUser> result = new();
+
+            using (var dbContext = _toDofactory.CreateDataContext())
+            {
+                dbContext.GetTable<ToDoUserModel>().ForEachAsync(user => result.Add(ModelMapper.MapFromModel(user)));
+            }
+
+            return Task.FromResult<IReadOnlyList<ToDoUser>>(result);
         }
     }
 }

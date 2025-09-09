@@ -8,5 +8,6 @@ namespace Core.DataAccess
         Task<ToDoUser?> GetUser(Guid userId, CancellationToken cancelToken);
         Task<ToDoUser?> GetUserByTelegramUserId(long telegramUserId, CancellationToken cancelToken);
         Task Add(ToDoUser user, CancellationToken cancelToken);
+        Task<IReadOnlyList<ToDoUser>> GetUsers(CancellationToken ct);
     }
 }

@@ -125,5 +125,17 @@ namespace HW2.Infrastructure.DataAccess
 
             return Task.CompletedTask;
         }
+
+        public async Task<IReadOnlyList<ToDoItem>> GetActiveWithDeadline(Guid userId, DateTime from, DateTime to, CancellationToken ct)
+        {
+            Func<ToDoItem, bool> predicate = (item) =>
+                   item.UserId == userId
+                && item.State == ToDoItemState.Active
+                && item.Deadline is not null
+                && item.Deadline >= from
+                && item.Deadline < to;
+
+            return await Find(userId, predicate, ct);
+        }
     }
 }
