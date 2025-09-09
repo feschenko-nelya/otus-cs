@@ -9,20 +9,22 @@ namespace HW2.TelegramBot.Scenario
         AddList,
         DeleteList
     }
-    internal class ScenarioContext
+    public class ScenarioContext
     {
         // Id пользователя в Telegram
-        internal long UserId { get; set; }
-        internal ScenarioType CurrentScenario;
+        public long UserId { get; set; }
+        public ScenarioType CurrentScenario;
         //Текущий шаг сценария
-        internal string? CurrentStep = null;
+        public string? CurrentStep = null;
         //Дополнительная инфрмация, необходимая для работы сценария
-        internal Dictionary<string, object> Data = new();
+        public Dictionary<string, object> Data = new();
+        public DateTime CreatedAt { get; }
 
-        internal ScenarioContext(ScenarioType scenario, long userId)
+        public ScenarioContext(ScenarioType scenario, long userId)
         {
             CurrentScenario = scenario;
             UserId = userId;
+            CreatedAt = DateTime.UtcNow;
         }
     }
 }
