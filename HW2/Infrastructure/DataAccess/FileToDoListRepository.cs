@@ -168,8 +168,11 @@ namespace HW2.Infrastructure.DataAccess
             return result;
         }
 
-        private string GetFileName(Guid id)
+        private string GetFileName(Guid? id)
         {
+            if (id == null)
+                return "";
+
             return Path.Combine(_repositoryDir, id.GetHashCode().ToString() + ".json");
         }
     }

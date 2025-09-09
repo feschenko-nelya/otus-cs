@@ -1,5 +1,4 @@
-﻿using System.Runtime.Serialization;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json.Serialization;
 using HW2.Core.Entities;
 
@@ -46,17 +45,36 @@ namespace Core.Entity
         public override string ToString()
         {
             StringBuilder strb = new();
-            strb.Append(Name);
-            strb.Append(" - cr: ");
-            strb.Append(CreatedAt.ToString("dd.MM.yyyy HH:mm:ss"));
-            strb.Append(" - ");
-            strb.Append(Id.ToString());
-
+            strb.AppendLine(Name);
+            strb.AppendLine();
+            strb.AppendLine("Created at: " + CreatedAt.ToString("dd.MM.yyyy HH:mm:ss"));
+            strb.Append("Deadline: ");
             if (Deadline != null)
             {
-                strb.Append(" - dl: ");
-                strb.Append(Deadline?.ToString("dd.MM.yyyy"));
+                strb.AppendLine(Deadline?.ToString("dd.MM.yyyy"));
             }
+
+            strb.AppendLine($"State: '{GetStateName()}'");
+            strb.AppendLine();
+            strb.AppendLine($"Id: '{Id}'");
+            
+            return strb.ToString();
+        }
+        public string GetHtmlString()
+        {
+            StringBuilder strb = new();
+            strb.AppendLine($"<b>{Name}</b>");
+            strb.AppendLine();
+            strb.AppendLine("Created at: " + CreatedAt.ToString("dd.MM.yyyy HH:mm:ss"));
+            strb.Append("Deadline: ");
+            if (Deadline != null)
+            {
+                strb.AppendLine(Deadline?.ToString("dd.MM.yyyy"));
+            }
+
+            strb.AppendLine($"State: '{GetStateName()}'");
+            strb.AppendLine();
+            strb.AppendLine($"Id: '{Id}'");
 
             return strb.ToString();
         }

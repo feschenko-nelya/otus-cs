@@ -11,27 +11,13 @@ namespace Infrastructure.DataAccess
             await Task.Run(() => _items.Add(item));
         }
 
-        public async Task<int> CountActive(Guid userId, CancellationToken cancelToken)
+        public Task<int> CountActive(Guid userId, CancellationToken cancelToken)
         {
-            return await Task<int>.Run(() =>
-            {
-                int count = 0;
-
-                foreach (ToDoItem item in _items)
-                {
-                    if (cancelToken.IsCancellationRequested)
-                    {
-                        return 0;
-                    }
-
-                    if (item.State == ToDoItemState.Active)
-                    {
-                        count += 1;
-                    }
-                }
-
-                return count;
-            });
+            return Task.FromResult<int>(
+                    (from item in _items
+                     where item.State == ToDoItemState.Active
+                     select item)
+                      .Count());
         }
 
         public async Task Delete(Guid id, CancellationToken cancelToken)

@@ -28,6 +28,10 @@ namespace Infrastructure.Services
         {
             this.toDoRepository = toDoRepository;
         }
+        public async Task<ToDoItem?> Get(Guid toDoItemId, CancellationToken ct)
+        {
+            return await toDoRepository.Get(toDoItemId, ct);
+        }
         public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken cancelToken)
         {
             return await toDoRepository.GetActiveByUserId(userId, cancelToken);
@@ -151,15 +155,11 @@ namespace Infrastructure.Services
             if (toDoItems.Count == 0)
                 return [];
 
-            List<ToDoItem> result = new();
+            var result = from item in toDoItems
+                         where item.List?.Id == listId
+                         select item;
 
-            foreach (var toDoItem in toDoItems)
-            {
-                if (toDoItem.List?.Id == listId)
-                    result.Add(toDoItem);
-            }
-
-            return result.AsReadOnly();
+            return result.ToList();
         }
     }
 }

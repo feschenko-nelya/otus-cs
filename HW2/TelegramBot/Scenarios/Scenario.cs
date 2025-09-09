@@ -5,6 +5,7 @@ namespace HW2.TelegramBot.Scenario
     {
         None,
         AddTask,
+        DeleteTask,
         AddList,
         DeleteList
     }

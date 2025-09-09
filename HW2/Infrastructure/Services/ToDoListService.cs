@@ -20,13 +20,15 @@ namespace HW2.Infrastructure.Services
                 throw new TaskLengthLimitException(name.Length, 10);
             }
 
-            var toDoLists = await GetUserLists(user.UserId, ct);
+            IReadOnlyList<ToDoList> toDoLists = await GetUserLists(user.UserId, ct);
 
-            foreach (var list in toDoLists)
-            {
-                if (list.Name == name)
-                    throw new Exception("Название списка уже существует.");
-            }
+            bool isListNameExisted = (from list in toDoLists 
+                                      where list.Name == name 
+                                      select list)
+                                      .Count() > 0;
+
+            if (isListNameExisted)
+                throw new Exception("Название списка уже существует.");
 
             var newList = new ToDoList(user, name);
 

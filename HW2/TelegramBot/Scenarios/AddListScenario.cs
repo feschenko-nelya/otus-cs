@@ -72,7 +72,11 @@ namespace HW2.TelegramBot.Scenarios
 
                             await _toDoListService.Add(toDoUser, message.Text, ct);
 
-                            return ScenarioResult.Transition;
+                        await bot.SendMessage(chat.Id,
+                                              $"Список '{message.Text}' добавлен",
+                                              cancellationToken: ct);
+
+                        return ScenarioResult.Completed;
                         }
                 }
 
