@@ -1,7 +1,6 @@
 ﻿
 using Core.Entity;
 using HW2.Core.DataAccess;
-using HW2.Core.DataAccess.Models;
 using HW2.Core.Entities;
 using HW2.Core.Services;
 using HW2.Infrastructure.DataAccess;
@@ -25,30 +24,36 @@ namespace HW2.Infrastructure.Services
 
             using (var dbContext = _contextFactory.CreateDataContext())
             {
-                 await dbContext.GetTable<NotificationModel>()
-                        .Where(sqlItem => sqlItem.ScheduledAt <= scheduledBefore)
-                        .ForEachAsync(sqlItem => result.Add(ModelMapper.MapFromModel(sqlItem)));
+                var notfModels = await dbContext.GetTable<NotificationModel>()
+                                       .Where(sqlItem => sqlItem.ScheduledAt <= scheduledBefore)
+                                       .ToListAsync();
+
+                await Task.Run(() =>
+                {
+                    foreach (var notfModel in notfModels)
+                    {
+                        result.Add(ModelMapper.MapFromModel(notfModel));
+                    }
+                });
             }
 
             return result;
         }
 
-        public Task MarkNotified(Guid notificationId, CancellationToken ct)
+        public async Task MarkNotified(Guid notificationId, CancellationToken ct)
         {
             using (var dbContext = _contextFactory.CreateDataContext())
             {
-                dbContext.GetTable<NotificationModel>()
-                    .Where(sqlItem => sqlItem.Id == notificationId)
-                    .Set(sqlItem => sqlItem.IsNotified, true)
-                    .Set(sqlItem => sqlItem.NotifiedAt, DateTime.UtcNow)
-                    .Update();
+                await dbContext.GetTable<NotificationModel>()
+                      .Where(sqlItem => sqlItem.Id == notificationId)
+                      .Set(sqlItem => sqlItem.IsNotified, true)
+                      .Set(sqlItem => sqlItem.NotifiedAt, DateTime.UtcNow)
+                      .UpdateAsync(token: ct);
             }
-
-            return Task.CompletedTask;
         }
 
         // Создает нотификацию. Если запись с userId и type уже есть, то вернуть false и не добавлять запись, иначе вернуть true
-        public Task<bool> ScheduleNotification(Guid userId, string type, string text, DateTime scheduledAt, CancellationToken ct)
+        public async Task<bool> ScheduleNotification(Guid userId, string type, string text, DateTime scheduledAt, CancellationToken ct)
         {
             bool result = false;
 
@@ -71,13 +76,13 @@ namespace HW2.Infrastructure.Services
                         NotifiedAt = null
                     };
 
-                    dbContext.Insert(ModelMapper.MapToModel(ntf));
+                    await dbContext.InsertAsync(ModelMapper.MapToModel(ntf), token: ct);
 
                     result = true;
                 }
             }
 
-            return Task.FromResult<bool>(result);
+            return result;
         }
     }
 }
