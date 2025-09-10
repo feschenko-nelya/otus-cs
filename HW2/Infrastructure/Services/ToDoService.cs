@@ -85,10 +85,15 @@ namespace Infrastructure.Services
 
             ToDoItem newItem = new()
             {
+                Id = Guid.NewGuid(),
                 Name = name,
-                User = user,
+                CreatedAt = DateTime.UtcNow,
+                State = ToDoItemState.Active,
+                StateChangedAt = DateTime.UtcNow,
                 Deadline = (deadline == default(DateTime) || deadline == null) ? null : deadline,
-                ListId = list?.Id
+
+                User = user,
+                List = list
             };
 
             await toDoRepository.Add(newItem, cancelToken);
@@ -159,7 +164,7 @@ namespace Infrastructure.Services
                 return [];
 
             var result = from item in toDoItems
-                         where item.ListId == listId
+                         where (item.List is null) ? item.List is null : item.List.Id == listId
                          select item;
 
             return result.ToList();
