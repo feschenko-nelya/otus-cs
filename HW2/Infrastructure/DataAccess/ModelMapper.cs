@@ -32,13 +32,14 @@ namespace HW2.Infrastructure.DataAccess
             return new ToDoItem
             {
                 Id = model.Id,
-                UserId = model.UserId,
                 ListId = model.ListId,
                 Name = model.Name,
                 State = model.State,
                 CreatedAt = model.CreatedAt,
                 Deadline = model.Deadline,
                 StateChangedAt = model.StateChangedAt,
+
+                User = MapFromModel(model.User)
             };
         }
         public static ToDoItemModel MapToModel(ToDoItem entity)
@@ -46,7 +47,7 @@ namespace HW2.Infrastructure.DataAccess
             return new ToDoItemModel
             {
                 Id = entity.Id,
-                UserId = entity.UserId,
+                UserId = entity.User.UserId,
                 ListId = entity.ListId,
                 Name = entity.Name,
                 State = entity.State,
@@ -54,7 +55,7 @@ namespace HW2.Infrastructure.DataAccess
                 Deadline = entity.Deadline,
                 StateChangedAt = entity.StateChangedAt,
 
-                User = new(),
+                User = MapToModel(entity.User),
                 List = null
             };
         }

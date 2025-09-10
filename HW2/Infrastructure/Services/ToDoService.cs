@@ -63,11 +63,11 @@ namespace Infrastructure.Services
             return true;
         }
 
-        public async Task<ToDoItem> Add(Guid userId, string name, DateTime? deadline, ToDoList? list, CancellationToken cancelToken)
+        public async Task<ToDoItem> Add(ToDoUser user, string name, DateTime? deadline, ToDoList? list, CancellationToken cancelToken)
         {
-            ItemLimit userItemLimit = GetUserItemLimit(userId);
+            ItemLimit userItemLimit = GetUserItemLimit(user.UserId);
 
-            IReadOnlyList<ToDoItem> items = await toDoRepository.GetAllByUserId(userId, cancelToken);
+            IReadOnlyList<ToDoItem> items = await toDoRepository.GetAllByUserId(user.UserId, cancelToken);
             if (items.Count == userItemLimit.Number)
             {
                 throw new TaskCountLimitException(userItemLimit.Number);
@@ -78,7 +78,7 @@ namespace Infrastructure.Services
                 throw new TaskLengthLimitException(name.Length, userItemLimit.Length);
             }
 
-            if (toDoRepository.ExistsByName(userId, name, cancelToken).Result)
+            if (toDoRepository.ExistsByName(user.UserId, name, cancelToken).Result)
             {
                 throw new DuplicateTaskException(name);
             }
@@ -86,7 +86,7 @@ namespace Infrastructure.Services
             ToDoItem newItem = new()
             {
                 Name = name,
-                UserId = userId,
+                User = user,
                 Deadline = (deadline == default(DateTime) || deadline == null) ? null : deadline,
                 ListId = list?.Id
             };
