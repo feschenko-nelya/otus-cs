@@ -14,24 +14,21 @@ namespace HW2.Infrastructure.DataAccess
         {
             _toDofactory = factory;
         }
-        public Task Add(ToDoList list, CancellationToken ct)
+
+        public async Task Add(ToDoList list, CancellationToken ct)
         {
             using (var dbContext = _toDofactory.CreateDataContext())
             {
-                dbContext.InsertAsync(ModelMapper.MapToModel(list), token: ct);
+                await dbContext.InsertAsync(ModelMapper.MapToModel(list), token: ct);
             }
-
-            return Task.CompletedTask;
         }
 
-        public Task Delete(Guid id, CancellationToken ct)
+        public async Task Delete(Guid id, CancellationToken ct)
         {
             using (var dbContext = _toDofactory.CreateDataContext())
             {
-                dbContext.GetTable<ToDoListModel>().Where(list => list.Id == id).DeleteAsync(token: ct);
+                await dbContext.GetTable<ToDoListModel>().Where(list => list.Id == id).DeleteAsync(token: ct);
             }
-
-            return Task.CompletedTask;
         }
 
         public Task<bool> ExistsByName(Guid userId, string name, CancellationToken ct)
@@ -52,6 +49,7 @@ namespace HW2.Infrastructure.DataAccess
             using (var dbContext = _toDofactory.CreateDataContext())
             {
                 list = dbContext.GetTable<ToDoListModel>()
+                          .LoadWith(lm => lm.User)
                           .FirstOrDefault(u => u.Id == id);
             }
 
@@ -67,9 +65,18 @@ namespace HW2.Infrastructure.DataAccess
 
             using (var dbContext = _toDofactory.CreateDataContext())
             {
-                await dbContext.GetTable<ToDoListModel>()
-                      .Where(list => list.UserId == userId)
-                      .ForEachAsync(list => lists.Add(ModelMapper.MapFromModel(list)));
+                var listModels = await dbContext.GetTable<ToDoListModel>()
+                                      .Where(list => list.UserId == userId)
+                                      .LoadWith(lm => lm.User)
+                                      .ToListAsync();
+
+                await Task.Run(() =>
+                {
+                    foreach (var listModel in listModels)
+                    {
+                        lists.Add(ModelMapper.MapFromModel(listModel));
+                    }
+                });
             }
 
             return lists;
