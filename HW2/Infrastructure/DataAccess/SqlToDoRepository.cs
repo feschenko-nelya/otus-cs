@@ -19,7 +19,7 @@ namespace HW2.Infrastructure.DataAccess
         {
             using (var dbContext = _toDofactory.CreateDataContext())
             {   
-                dbContext.Insert(ModelMapper.MapToModel(item));
+                dbContext.InsertAsync(ModelMapper.MapToModel(item), token: cancelToken);
             }
 
             return Task.CompletedTask;
@@ -43,7 +43,7 @@ namespace HW2.Infrastructure.DataAccess
         {
             using (var dbContext = _toDofactory.CreateDataContext())
             {
-                dbContext.GetTable<ToDoItemModel>().Where(item => item.Id == id).Delete();
+                dbContext.GetTable<ToDoItemModel>().Where(item => item.Id == id).DeleteAsync(token: cancelToken);
             }
 
             return Task.CompletedTask;
@@ -119,8 +119,7 @@ namespace HW2.Infrastructure.DataAccess
                     .Set(sqlItem => sqlItem.Name, item.Name)
                     .Set(sqlItem => sqlItem.State, item.State)
                     .Set(sqlItem => sqlItem.Deadline, item.Deadline)
-                    .Update();
-                          
+                    .UpdateAsync(token: cancelToken);                          
             }
 
             return Task.CompletedTask;

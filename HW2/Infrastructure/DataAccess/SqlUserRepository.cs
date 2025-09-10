@@ -19,7 +19,7 @@ namespace HW2.Infrastructure.DataAccess
         {
             using (var dbContext = _toDofactory.CreateDataContext())
             {
-                dbContext.Insert(ModelMapper.MapToModel(user));
+                dbContext.InsertAsync(ModelMapper.MapToModel(user), token: cancelToken);
             }
 
             return Task.CompletedTask;

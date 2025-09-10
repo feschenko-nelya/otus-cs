@@ -18,7 +18,7 @@ namespace HW2.Infrastructure.DataAccess
         {
             using (var dbContext = _toDofactory.CreateDataContext())
             {
-                dbContext.Insert(ModelMapper.MapToModel(list));
+                dbContext.InsertAsync(ModelMapper.MapToModel(list), token: ct);
             }
 
             return Task.CompletedTask;
@@ -28,7 +28,7 @@ namespace HW2.Infrastructure.DataAccess
         {
             using (var dbContext = _toDofactory.CreateDataContext())
             {
-                dbContext.GetTable<ToDoListModel>().Where(list => list.Id == id).Delete();
+                dbContext.GetTable<ToDoListModel>().Where(list => list.Id == id).DeleteAsync(token: ct);
             }
 
             return Task.CompletedTask;
