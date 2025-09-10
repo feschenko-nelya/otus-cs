@@ -32,8 +32,10 @@ namespace HW2.Infrastructure.Services
 
             ToDoList newList = new()
             {
-                UserId = user.UserId,
-                Name = name
+                Id = Guid.NewGuid(),
+                User = user,
+                Name = name,
+                CreatedAt = DateTime.Now,
             };
 
             await _toDoListRepository.Add(newList, ct);

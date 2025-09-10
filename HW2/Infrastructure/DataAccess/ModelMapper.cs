@@ -63,11 +63,10 @@ namespace HW2.Infrastructure.DataAccess
             return new ToDoList
             {
                 Id = model.Id,
-                UserId = model.UserId,
                 Name = model.Name,
                 CreatedAt = model.CreatedAt,
 
-                User = new()
+                User = MapFromModel(model.User)
             };
         }
         public static ToDoListModel MapToModel(ToDoList entity)
@@ -75,11 +74,11 @@ namespace HW2.Infrastructure.DataAccess
             return new ToDoListModel
             {
                 Id = entity.Id,
-                UserId = entity.UserId,
+                UserId = entity.User.UserId,
                 Name = entity.Name ?? "",
                 CreatedAt = entity.CreatedAt,
 
-                User = new()
+                User = MapToModel(entity.User)
             };
         }
     }
