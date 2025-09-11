@@ -17,5 +17,6 @@ namespace Core.DataAccess
         Task<bool> ExistsByName(Guid userId, string name, CancellationToken cancelToken);
         // Возвращает количество активных задач у пользователя
         Task<int> CountActive(Guid userId, CancellationToken cancelToken);
+        Task<IReadOnlyList<ToDoItem>> GetActiveWithDeadline(Guid userId, DateTime from, DateTime to, CancellationToken ct);
     }
 }

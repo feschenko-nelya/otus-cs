@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Runtime.InteropServices;
+﻿
 using System.Text.Json;
 using Core.DataAccess;
 using Core.Entity;
@@ -361,6 +360,11 @@ namespace Infrastructure.DataAccess
                     _userItemIndexFile.Add(userHashCode, itemHashCode);
                 }
             }
+        }
+
+        public Task<IReadOnlyList<ToDoItem>> GetActiveWithDeadline(Guid userId, DateTime from, DateTime to, CancellationToken ct)
+        {
+            return Task.FromResult< IReadOnlyList<ToDoItem>>([]);
         }
 
         private string GetFileName(ToDoItem item)

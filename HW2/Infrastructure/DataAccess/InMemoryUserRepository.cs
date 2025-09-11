@@ -57,5 +57,10 @@ namespace Infrastructure.DataAccess
                 return null;
             });
         }
+
+        public Task<IReadOnlyList<ToDoUser>> GetUsers(CancellationToken ct)
+        {
+            return Task.FromResult<IReadOnlyList<ToDoUser>>([]);
+        }
     }
 }

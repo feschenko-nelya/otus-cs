@@ -13,5 +13,6 @@ namespace HW2.Core.DataAccess
         public ITable<ToDoUser> User => this.GetTable<ToDoUser>();
         public ITable<ToDoList> List => this.GetTable<ToDoList>();
         public ITable<ToDoItem> Item => this.GetTable<ToDoItem>();
+        public ITable<Notification> Notifications => this.GetTable<Notification>();
     }
 }
