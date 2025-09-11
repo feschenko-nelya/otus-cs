@@ -6,7 +6,6 @@ using HW2.Infrastructure.DataAccess;
 using HW2.Infrastructure.Services;
 using HW2.TelegramBot.Scenario;
 using HW2.TelegramBot.Scenarios;
-using Infrastructure.DataAccess;
 using Infrastructure.Services;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
@@ -20,13 +19,19 @@ namespace HW2
         {
             using var cts = new CancellationTokenSource();
 
-            IUserRepository usersRepository = new FileUserRepository("ToDoUsers");
+            string? pgPswd = Environment.GetEnvironmentVariable("PG_PSWD");
+            if (pgPswd == null)
+            {
+                throw new Exception("PG password is empty.");
+            }
+            IDataContextFactory<ToDoDataContext> dataContextFactory = new DataContextFactory($"User ID=postgres;Password={pgPswd};Host=localhost;Port=5432;Database=ToDoList;");
+            IUserRepository usersRepository = new SqlUserRepository(dataContextFactory);
             UserService userService = new(usersRepository);
 
-            IToDoRepository toDoRepository = new FileToDoRepository("ToDoItems");
+            IToDoRepository toDoRepository = new SqlToDoRepository(dataContextFactory);
             ToDoService toDoService = new(toDoRepository);
 
-            IToDoListRepository toDoListRepository = new FileToDoListRepository("ToDoLists");
+            IToDoListRepository toDoListRepository = new SqlToDoListRepository(dataContextFactory);
             IToDoListService toDoListService = new ToDoListService(toDoListRepository);
 
             IEnumerable<IScenario> scenarios = [new AddTaskScenario(userService, toDoService, toDoListService),

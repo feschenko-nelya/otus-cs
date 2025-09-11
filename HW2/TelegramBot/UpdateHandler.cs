@@ -291,7 +291,7 @@ namespace HW2
                     return;
                 }
 
-                if (await _toDoService.MarkCompleted(toDoItem.UserId, toDoItem.Id, ct))
+                if (await _toDoService.MarkCompleted(toDoItem.User.UserId, toDoItem.Id, ct))
                     await botClient.SendMessage(botMessage.Chat, $"Задача '{toDoItem.Name}' отмечена как выполненная.", cancellationToken: ct);
                 else
                     await botClient.SendMessage(botMessage.Chat, $"Задача '{toDoItem.Name}' не отмечена как выполненная.", cancellationToken: ct);

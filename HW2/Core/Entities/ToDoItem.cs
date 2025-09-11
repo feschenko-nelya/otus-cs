@@ -1,6 +1,6 @@
 ﻿using System.Text;
-using System.Text.Json.Serialization;
 using HW2.Core.Entities;
+using Telegram.Bot.Types;
 
 namespace Core.Entity
 {
@@ -12,31 +12,16 @@ namespace Core.Entity
     };
     public class ToDoItem
     {
-        [JsonInclude]
-        public Guid Id { get; private set; }
-        public Guid UserId { get; set; }
+        public Guid Id { get; set; }
         public string Name { get; set; } = "";
-        [JsonInclude]
-        public DateTime CreatedAt { get; private set; }
+        public DateTime CreatedAt { get; set; }
         public ToDoItemState State { get; set; }
-        [JsonInclude]
-        public DateTime? StateChangedAt { get; private set; }
+        public DateTime StateChangedAt { get; set; }
         public DateTime? Deadline { get; set; }
-        public ToDoList? List { get; set; }
 
-        [JsonConstructor]
-        private ToDoItem()
-        {
+        public ToDoUser User { get; set; } = new();
+        public ToDoList? List { get; set; } = null;
 
-        }
-        public ToDoItem(string name)
-        {
-            Id = Guid.NewGuid();
-            Name = name;
-            State = ToDoItemState.Active;
-            StateChangedAt = DateTime.Now;
-            CreatedAt = DateTime.Now;
-        }
         public void SetCompleted()
         {
             State = ToDoItemState.Completed;

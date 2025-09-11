@@ -88,18 +88,6 @@ namespace HW2.TelegramBot.Scenarios
 
                     context.Data["Deadline"] = botMessage.Text;
 
-                        //string? toDoItemName = context.Data["Name"].ToString();
-                        //if (string.IsNullOrEmpty(toDoItemName))
-                        //    throw new Exception("Название задачи не сохранилось.");
-
-                        //ToDoUser? toDoUser = await _userService.GetUser(context.UserId, ct);
-                        //if (toDoUser == null)
-                        //    throw new Exception("Объект пользователя не найден.");
-
-                        //await _toDoService.Add(toDoUser.UserId, toDoItemName, deadline, null, ct);
-
-                        //await bot.SendMessage(update.Message.Chat.Id, $"Задача {toDoItemName} добавлена", cancellationToken: ct);
-
                         ToDoUser? toDoUser = await _userService.GetUser(context.UserId, ct);
                         if (toDoUser == null)
                             throw new Exception("Объект пользователя не найден по id.");
@@ -130,9 +118,6 @@ namespace HW2.TelegramBot.Scenarios
 
                         await botClient.SendMessage(botMessage.Chat, "Выберите список:",
                                                     replyMarkup: listsKeyboard, cancellationToken: ct);
-
-                        //await botClient.SendMessage(chat.Id, "Для отмены нажмите /cancel",
-                        //                            replyMarkup: new ReplyKeyboardRemove(), cancellationToken: ct);
 
                         context.CurrentStep = "Add";
                         return ScenarioResult.Transition;
@@ -167,7 +152,7 @@ namespace HW2.TelegramBot.Scenarios
                         DateTime deadline;
                         DateTime.TryParse(context.Data["Deadline"].ToString(), out deadline);
 
-                        await _toDoService.Add(toDoUser.UserId, toDoItemName, deadline, toDoList, ct);
+                        await _toDoService.Add(toDoUser, toDoItemName, deadline, toDoList, ct);
 
                         await botClient.SendMessage(query.Message.Chat.Id, $"Задача {toDoItemName} добавлена", cancellationToken: ct);
 

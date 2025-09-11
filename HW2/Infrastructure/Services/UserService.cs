@@ -18,13 +18,18 @@ namespace Infrastructure.Services
         }
         public async Task<ToDoUser> RegisterUser(long telegramUserId, string telegramUserName, CancellationToken cancelToken)
         {
-            var user = await GetUser(telegramUserId, cancelToken);
+            ToDoUser? user = await GetUser(telegramUserId, cancelToken);
             if (user != null)
             {
                 return user;
             }
 
-            user = new ToDoUser(telegramUserId, telegramUserName);
+            user = new()
+            {
+                TelegramUserId = telegramUserId,
+                TelegramUserName = telegramUserName
+            };
+
             await _users.Add(user, cancelToken);
 
             return user;

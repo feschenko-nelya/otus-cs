@@ -51,7 +51,7 @@ namespace Infrastructure.DataAccess
                         return false;
                     }
 
-                    if ((item.UserId == userId) && (item.Name == name))
+                    if ((item.User.UserId == userId) && (item.Name == name))
                     {
                         return true;
                     }
@@ -95,7 +95,7 @@ namespace Infrastructure.DataAccess
                         return [];
                     }
 
-                    if ((item.UserId == userId) && (item.State == ToDoItemState.Active))
+                    if ((item.User.UserId == userId) && (item.State == ToDoItemState.Active))
                     {
                         resItems.Add(item);
                     }
@@ -118,7 +118,7 @@ namespace Infrastructure.DataAccess
                         return [];
                     }
 
-                    if (item.UserId == userId)
+                    if (item.User.UserId == userId)
                     {
                         resItems.Add(item);
                     }
@@ -141,7 +141,7 @@ namespace Infrastructure.DataAccess
                         return [];
                     }
 
-                    if ((item.UserId == userId) && predicate(item))
+                    if ((item.User.UserId == userId) && predicate(item))
                     {
                         resItems.Add(item);
                     }

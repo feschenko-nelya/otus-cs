@@ -81,7 +81,7 @@ namespace HW2.TelegramBot.Scenarios
                         await botClient.SendMessage(chat.Id, $"Подтвердите удаление '{toDoItem.Name}'.", 
                                                     replyMarkup:keyboard, cancellationToken: ct);
 
-                        context.Data["toDoItemUserId"] = toDoItem.UserId;
+                        context.Data["toDoItemUserId"] = toDoItem.User.UserId;
                         context.Data["toDoItemId"] = toDoItem.Id;
 
                         context.CurrentStep = "Approve";
