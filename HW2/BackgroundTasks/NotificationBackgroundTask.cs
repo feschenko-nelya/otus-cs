@@ -18,14 +18,7 @@ namespace HW2.BackgroundTasks
 
             foreach (Notification notify in notifies)
             {
-                foreach (Telegram.Bot.Types.Update upd in updates)
-                {
-                    if (upd.Message != null)
-                    {
-                        await botClient.SendMessage(upd.Message.Chat, notify.Text);
-                    }
-                }
-
+                await botClient.SendMessage(notify.User.TelegramUserId, notify.Text);
                 await notificationService.MarkNotified(notify.Id, ct);
             }
         }

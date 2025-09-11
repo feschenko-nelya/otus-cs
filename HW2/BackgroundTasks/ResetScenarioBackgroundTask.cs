@@ -26,18 +26,12 @@ namespace HW2.BackgroundTasks
                 {
                     await _scenarioRepository.ResetContext(context.UserId, ct);
 
-                    foreach (Telegram.Bot.Types.Update upd in updates)
-                    {
-                        if (upd.Message != null)
-                        {
-                            await _botClient.SendMessage(upd.Message.Chat, 
-                                                         $"Сценарий отменен, так как не поступил ответ в течение {_resetScenarioTimeout}",
-                                                         replyMarkup: new ReplyKeyboardMarkup { 
-                                                             Keyboard = [["/addtask"], ["/show"], ["/report"]],
-                                                             ResizeKeyboard = true
-                                                         }   );
-                        }
-                    }
+                    await _botClient.SendMessage(context.UserId, 
+                                                    $"Сценарий отменен, так как не поступил ответ в течение {_resetScenarioTimeout}",
+                                                    replyMarkup: new ReplyKeyboardMarkup { 
+                                                        Keyboard = [["/addtask"], ["/show"], ["/report"]],
+                                                        ResizeKeyboard = true
+                                                    }   );
                 }
             }
         }
