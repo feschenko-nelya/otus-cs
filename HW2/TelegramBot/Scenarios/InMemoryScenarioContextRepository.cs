@@ -6,6 +6,7 @@ namespace HW2.TelegramBot.Scenario
     internal class InMemoryScenarioContextRepository : IScenarioContextRepository
     {
         private ConcurrentDictionary<long, ScenarioContext> _scenarios = new();
+
         public Task<ScenarioContext?> GetContext(long userId, CancellationToken ct)
         {
             ScenarioContext? context = null;
@@ -30,6 +31,11 @@ namespace HW2.TelegramBot.Scenario
             _scenarios[userId] = context;
 
             return Task.CompletedTask;
+        }
+
+        Task<IReadOnlyList<ScenarioContext>> IScenarioContextRepository.GetContexts(CancellationToken ct)
+        {
+            return Task.FromResult<IReadOnlyList<ScenarioContext>>(_scenarios.Values.ToList());
         }
     }
 }

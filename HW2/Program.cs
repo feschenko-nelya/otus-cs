@@ -1,5 +1,6 @@
 ﻿
 using Core.DataAccess;
+using HW2.BackgroundTasks;
 using HW2.Core.DataAccess;
 using HW2.Core.Services;
 using HW2.Infrastructure.DataAccess;
@@ -58,6 +59,10 @@ namespace HW2
                 var botOptions = new TelegramBotClientOptions(telegramBotToken);
                 TelegramBotClient botClient = new TelegramBotClient(botOptions);
 
+                BackgroundTaskRunner runner = new BackgroundTaskRunner();
+                runner.AddTask(new ResetScenarioBackgroundTask(TimeSpan.FromHours(1), contextRepository, botClient));
+                runner.StartTasks(cts.Token);
+
                 var receiverOptions = new ReceiverOptions
                 {
                     AllowedUpdates = [UpdateType.Message, UpdateType.CallbackQuery],
@@ -78,6 +83,7 @@ namespace HW2
                     ConsoleKeyInfo key = Console.ReadKey();
                     if (key.KeyChar == 'A')
                     {
+                        await runner.StopTasks(cts.Token);
                         cts.Cancel();
                         await handler.RemoveKeyboard(botClient);
                         Console.WriteLine();
