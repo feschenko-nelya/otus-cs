@@ -15,14 +15,12 @@ namespace HW2.Infrastructure.DataAccess
         {
             _toDofactory = factory;
         }
-        public Task Add(ToDoUser user, CancellationToken cancelToken)
+        public async Task Add(ToDoUser user, CancellationToken cancelToken)
         {
             using (var dbContext = _toDofactory.CreateDataContext())
             {
-                dbContext.Insert(ModelMapper.MapToModel(user));
+                await dbContext.InsertAsync(ModelMapper.MapToModel(user), token: cancelToken);
             }
-
-            return Task.CompletedTask;
         }
 
         public Task<ToDoUser?> GetUser(Guid userId, CancellationToken cancelToken)

@@ -63,11 +63,11 @@ namespace Infrastructure.Services
             return true;
         }
 
-        public async Task<ToDoItem> Add(Guid userId, string name, DateTime? deadline, ToDoList? list, CancellationToken cancelToken)
+        public async Task<ToDoItem> Add(ToDoUser user, string name, DateTime? deadline, ToDoList? list, CancellationToken cancelToken)
         {
-            ItemLimit userItemLimit = GetUserItemLimit(userId);
+            ItemLimit userItemLimit = GetUserItemLimit(user.UserId);
 
-            IReadOnlyList<ToDoItem> items = await toDoRepository.GetAllByUserId(userId, cancelToken);
+            IReadOnlyList<ToDoItem> items = await toDoRepository.GetAllByUserId(user.UserId, cancelToken);
             if (items.Count == userItemLimit.Number)
             {
                 throw new TaskCountLimitException(userItemLimit.Number);
@@ -78,17 +78,22 @@ namespace Infrastructure.Services
                 throw new TaskLengthLimitException(name.Length, userItemLimit.Length);
             }
 
-            if (toDoRepository.ExistsByName(userId, name, cancelToken).Result)
+            if (toDoRepository.ExistsByName(user.UserId, name, cancelToken).Result)
             {
                 throw new DuplicateTaskException(name);
             }
 
             ToDoItem newItem = new()
             {
+                Id = Guid.NewGuid(),
                 Name = name,
-                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                State = ToDoItemState.Active,
+                StateChangedAt = DateTime.UtcNow,
                 Deadline = (deadline == default(DateTime) || deadline == null) ? null : deadline,
-                ListId = list?.Id
+
+                User = user,
+                List = list
             };
 
             await toDoRepository.Add(newItem, cancelToken);
@@ -159,7 +164,7 @@ namespace Infrastructure.Services
                 return [];
 
             var result = from item in toDoItems
-                         where item.ListId == listId
+                         where (item.List is null) ? item.List is null : item.List.Id == listId
                          select item;
 
             return result.ToList();

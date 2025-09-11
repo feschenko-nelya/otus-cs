@@ -152,7 +152,7 @@ namespace HW2.TelegramBot.Scenarios
                         DateTime deadline;
                         DateTime.TryParse(context.Data["Deadline"].ToString(), out deadline);
 
-                        await _toDoService.Add(toDoUser.UserId, toDoItemName, deadline, toDoList, ct);
+                        await _toDoService.Add(toDoUser, toDoItemName, deadline, toDoList, ct);
 
                         await botClient.SendMessage(query.Message.Chat.Id, $"Задача {toDoItemName} добавлена", cancellationToken: ct);
 

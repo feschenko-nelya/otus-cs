@@ -32,13 +32,14 @@ namespace HW2.Infrastructure.DataAccess
             return new ToDoItem
             {
                 Id = model.Id,
-                UserId = model.UserId,
-                ListId = model.ListId,
                 Name = model.Name,
                 State = model.State,
                 CreatedAt = model.CreatedAt,
                 Deadline = model.Deadline,
                 StateChangedAt = model.StateChangedAt,
+
+                User = MapFromModel(model.User),
+                List = (model.List is null) ? null : MapFromModel(model.List)
             };
         }
         public static ToDoItemModel MapToModel(ToDoItem entity)
@@ -46,16 +47,16 @@ namespace HW2.Infrastructure.DataAccess
             return new ToDoItemModel
             {
                 Id = entity.Id,
-                UserId = entity.UserId,
-                ListId = entity.ListId,
+                UserId = entity.User.UserId,
+                ListId = entity.List?.Id,
                 Name = entity.Name,
                 State = entity.State,
                 CreatedAt = entity.CreatedAt,
                 Deadline = entity.Deadline,
                 StateChangedAt = entity.StateChangedAt,
 
-                User = new(),
-                List = null
+                User = MapToModel(entity.User),
+                List = (entity.List is null) ? null : MapToModel(entity.List)
             };
         }
         public static ToDoList MapFromModel(ToDoListModel model)
@@ -63,11 +64,10 @@ namespace HW2.Infrastructure.DataAccess
             return new ToDoList
             {
                 Id = model.Id,
-                UserId = model.UserId,
                 Name = model.Name,
                 CreatedAt = model.CreatedAt,
 
-                User = new()
+                User = MapFromModel(model.User)
             };
         }
         public static ToDoListModel MapToModel(ToDoList entity)
@@ -75,11 +75,11 @@ namespace HW2.Infrastructure.DataAccess
             return new ToDoListModel
             {
                 Id = entity.Id,
-                UserId = entity.UserId,
+                UserId = entity.User.UserId,
                 Name = entity.Name ?? "",
                 CreatedAt = entity.CreatedAt,
 
-                User = new()
+                User = MapToModel(entity.User)
             };
         }
     }
