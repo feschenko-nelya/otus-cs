@@ -72,11 +72,8 @@ namespace HW2.Infrastructure.DataAccess
                                                       .LoadWith(im => im.List)
                                                       .ToListAsync(token: cancelToken);
 
-                await Task.Run(() =>
-                {
-                    foreach (var modelItem in modelItems)
-                        items.Add(ModelMapper.MapFromModel(modelItem));
-                });
+                foreach (var modelItem in modelItems)
+                    items.Add(ModelMapper.MapFromModel(modelItem));
             }
 
             return items;

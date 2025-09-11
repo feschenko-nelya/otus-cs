@@ -68,15 +68,12 @@ namespace HW2.Infrastructure.DataAccess
                 var listModels = await dbContext.GetTable<ToDoListModel>()
                                       .Where(list => list.UserId == userId)
                                       .LoadWith(lm => lm.User)
-                                      .ToListAsync();
+                                      .ToListAsync(token: ct);
 
-                await Task.Run(() =>
+                foreach (var listModel in listModels)
                 {
-                    foreach (var listModel in listModels)
-                    {
-                        lists.Add(ModelMapper.MapFromModel(listModel));
-                    }
-                });
+                    lists.Add(ModelMapper.MapFromModel(listModel));
+                }
             }
 
             return lists;
