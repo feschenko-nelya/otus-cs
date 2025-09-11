@@ -41,7 +41,7 @@ namespace Infrastructure.DataAccess
                 wstream.Flush();
                 wstream.Close();
 
-                _userItemIndexFile.Add(item.UserId, item.Id);
+                _userItemIndexFile.Add(item.User.UserId, item.Id);
             });
         }
 
@@ -143,7 +143,7 @@ namespace Infrastructure.DataAccess
                     string itemJson = File.ReadAllText(itemFile);
                     ToDoItem? toDoItem = JsonSerializer.Deserialize<ToDoItem>(itemJson);
 
-                    if (toDoItem?.UserId == userId && toDoItem?.Name == name)
+                    if (toDoItem?.User.UserId == userId && toDoItem?.Name == name)
                     {
                         isNameExists = true;
                         break;
@@ -369,7 +369,7 @@ namespace Infrastructure.DataAccess
 
         private string GetFileName(ToDoItem item)
         {
-            return Path.Combine(_repositoryDir, item.UserId.GetHashCode().ToString(), item.Id.GetHashCode().ToString() + ".json");
+            return Path.Combine(_repositoryDir, item.User.UserId.GetHashCode().ToString(), item.Id.GetHashCode().ToString() + ".json");
         }
     }
 }

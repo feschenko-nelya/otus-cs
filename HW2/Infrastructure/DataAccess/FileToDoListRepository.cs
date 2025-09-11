@@ -89,7 +89,7 @@ namespace HW2.Infrastructure.DataAccess
                 if (toDoList == null)
                     continue;
 
-                if (toDoList.UserId == userId && toDoList.Name == name)
+                if (toDoList.User.UserId == userId && toDoList.Name == name)
                 {
                     return Task.FromResult<bool>(true);
                 }
@@ -158,7 +158,7 @@ namespace HW2.Infrastructure.DataAccess
                     if (toDoList == null)
                         continue;
 
-                    if (toDoList.UserId == userId)
+                    if (toDoList.User.UserId == userId)
                     {
                         result.Add(toDoList);
                     }

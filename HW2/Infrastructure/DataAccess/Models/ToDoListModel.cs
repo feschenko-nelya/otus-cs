@@ -1,5 +1,4 @@
 ﻿
-using Core.Entity;
 using LinqToDB.Mapping;
 
 namespace HW2.Core.DataAccess.Models

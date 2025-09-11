@@ -13,16 +13,14 @@ namespace Core.Entity
     public class ToDoItem
     {
         public Guid Id { get; set; }
-        public Guid UserId { get; set; }
         public string Name { get; set; } = "";
         public DateTime CreatedAt { get; set; }
         public ToDoItemState State { get; set; }
         public DateTime StateChangedAt { get; set; }
         public DateTime? Deadline { get; set; }
-        public Guid? ListId { get; set; }
 
         public ToDoUser User { get; set; } = new();
-        public ToDoList? List { get; set; } = new();
+        public ToDoList? List { get; set; } = null;
 
         public void SetCompleted()
         {

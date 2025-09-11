@@ -15,14 +15,13 @@ namespace HW2.Infrastructure.DataAccess
         {
             _toDofactory = factory;
         }
-        public Task Add(ToDoItem item, CancellationToken cancelToken)
+
+        public async Task Add(ToDoItem item, CancellationToken cancelToken)
         {
             using (var dbContext = _toDofactory.CreateDataContext())
             {   
-                dbContext.Insert(ModelMapper.MapToModel(item));
+                await dbContext.InsertAsync(ModelMapper.MapToModel(item), token: cancelToken);
             }
-
-            return Task.CompletedTask;
         }
 
         public Task<int> CountActive(Guid userId, CancellationToken cancelToken)
@@ -39,14 +38,14 @@ namespace HW2.Infrastructure.DataAccess
             return Task.FromResult(count);
         }
 
-        public Task Delete(Guid id, CancellationToken cancelToken)
+        public async Task Delete(Guid id, CancellationToken cancelToken)
         {
             using (var dbContext = _toDofactory.CreateDataContext())
             {
-                dbContext.GetTable<ToDoItemModel>().Where(item => item.Id == id).Delete();
+                await dbContext.GetTable<ToDoItemModel>()
+                      .Where(item => item.Id == id)
+                      .DeleteAsync(token: cancelToken);
             }
-
-            return Task.CompletedTask;
         }
 
         public Task<bool> ExistsByName(Guid userId, string name, CancellationToken cancelToken)
@@ -67,9 +66,14 @@ namespace HW2.Infrastructure.DataAccess
 
             using (var dbContext = _toDofactory.CreateDataContext())
             {
-                await dbContext.GetTable<ToDoItemModel>()
-                          .Where(item => item.UserId == userId && predicate(ModelMapper.MapFromModel(item)))
-                          .ForEachAsync(item => items.Add(ModelMapper.MapFromModel(item)));
+                List<ToDoItemModel> modelItems = await dbContext.GetTable<ToDoItemModel>()
+                                                      .Where(item => item.UserId == userId && predicate(ModelMapper.MapFromModel(item)))
+                                                      .LoadWith(im => im.User)
+                                                      .LoadWith(im => im.List)
+                                                      .ToListAsync(token: cancelToken);
+
+                foreach (var modelItem in modelItems)
+                    items.Add(ModelMapper.MapFromModel(modelItem));
             }
 
             return items;
@@ -82,6 +86,7 @@ namespace HW2.Infrastructure.DataAccess
             {
                 item = dbContext.GetTable<ToDoItemModel>()
                     .LoadWith(im => im.User)
+                    .LoadWith(im => im.List)
                     .FirstOrDefault(u => u.Id == id);
             }
 
@@ -91,39 +96,40 @@ namespace HW2.Infrastructure.DataAccess
             return Task.FromResult(ModelMapper.MapFromModel(item) ?? null);
         }
 
-        public Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken cancelToken)
+        public async Task<IReadOnlyList<ToDoItem>> GetActiveByUserId(Guid userId, CancellationToken cancelToken)
         {
             Func<ToDoItem, bool> predicate = (item) => item.State == ToDoItemState.Active;
-            return Find(userId, predicate, cancelToken);
+            return await Find(userId, predicate, cancelToken);
         }
 
         public async Task<IReadOnlyList<ToDoItem>> GetAllByUserId(Guid userId, CancellationToken cancelToken)
         {
-            List<ToDoItem> items = new();
+            Func<ToDoItem, bool> predicate = (item) => true;
+            return await Find(userId, predicate, cancelToken);
+        }
+
+        public async Task Update(ToDoItem item, CancellationToken cancelToken)
+        {
+            ToDoItem? prevItem = await Get(item.Id, cancelToken);
+            if (prevItem == null) return;
 
             using (var dbContext = _toDofactory.CreateDataContext())
             {
                 await dbContext.GetTable<ToDoItemModel>()
-                      .ForEachAsync(item => items.Add(ModelMapper.MapFromModel(item)));
+                      .Where(sqlItem => sqlItem.Id == item.Id)
+                      .Set(sqlItem => sqlItem.Name, item.Name)
+                      .Set(sqlItem => sqlItem.State, item.State)
+                      .Set(sqlItem => sqlItem.Deadline, item.Deadline)
+                      .UpdateAsync(token: cancelToken);
+                
+                if (item.State != prevItem.State)
+                {
+                    await dbContext.GetTable<ToDoItemModel>()
+                      .Where(sqlItem => sqlItem.Id == item.Id)
+                      .Set(sqlItem => sqlItem.StateChangedAt, DateTime.UtcNow)
+                      .UpdateAsync(token: cancelToken);
+                }
             }
-
-            return items;
-        }
-
-        public Task Update(ToDoItem item, CancellationToken cancelToken)
-        {
-            using (var dbContext = _toDofactory.CreateDataContext())
-            {
-                dbContext.GetTable<ToDoItemModel>()
-                    .Where(sqlItem => sqlItem.Id == item.Id)
-                    .Set(sqlItem => sqlItem.Name, item.Name)
-                    .Set(sqlItem => sqlItem.State, item.State)
-                    .Set(sqlItem => sqlItem.Deadline, item.Deadline)
-                    .Update();
-                          
-            }
-
-            return Task.CompletedTask;
         }
 
         public async Task<IReadOnlyList<ToDoItem>> GetActiveWithDeadline(Guid userId, DateTime from, DateTime to, CancellationToken ct)

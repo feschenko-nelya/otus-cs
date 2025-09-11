@@ -5,11 +5,16 @@ namespace HW2.Infrastructure.DataAccess
 {
     internal class DataContextFactory : IDataContextFactory<ToDoDataContext>
     {
+        private readonly string _connectionString;
+
+        public DataContextFactory(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
+
         public ToDoDataContext CreateDataContext()
         {
-            string? pgPswd = Environment.GetEnvironmentVariable("PG_PSWD");
-
-            return new ToDoDataContext($"User ID=postgres;Password={pgPswd};Host=localhost;Port=5432;Database=ToDoList;");
+            return new ToDoDataContext(_connectionString);
         }
     }
 }
