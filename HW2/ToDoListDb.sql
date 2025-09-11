@@ -37,6 +37,10 @@ CREATE TABLE IF NOT EXISTS public."ToDoList"
 )
 
 TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS public."ToDoList"
+    OWNER to postgres;
+
 -- DOMAIN: public.ToDoItemState
 
 -- DROP DOMAIN IF EXISTS public."ToDoItemState";
@@ -50,9 +54,6 @@ ALTER DOMAIN public."ToDoItemState" OWNER TO postgres;
 
 ALTER DOMAIN public."ToDoItemState"
     ADD CONSTRAINT enum CHECK (VALUE = ANY (ARRAY[0, 1, 2]));
-
-ALTER TABLE IF EXISTS public."ToDoList"
-    OWNER to postgres;
 	
 -- Table: public.ToDoItem
 
