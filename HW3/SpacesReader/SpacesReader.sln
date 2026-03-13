@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36915.13 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpacesReader", "SpacesReader.csproj", "{BD5A0AC5-A80C-4DEC-927A-2F4AD98D94ED}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BD5A0AC5-A80C-4DEC-927A-2F4AD98D94ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD5A0AC5-A80C-4DEC-927A-2F4AD98D94ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD5A0AC5-A80C-4DEC-927A-2F4AD98D94ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD5A0AC5-A80C-4DEC-927A-2F4AD98D94ED}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1988F8B3-F5C7-4DB4-9D1E-40F24BB76D8B}
+	EndGlobalSection
+EndGlobal
